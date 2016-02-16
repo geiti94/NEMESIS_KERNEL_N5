@@ -36,6 +36,7 @@
 #endif
 #define POLLING_MSEC_DISP_ON	1000
 #define POLLING_MSEC_DISP_OFF	100
+#define POLLING_MSEC	200
 #define DEFAULT_LOW_STAY_THRSHD	0
 
 struct cpu_load_info {
@@ -99,12 +100,21 @@ enum hotplug_cmd {
 	CMD_SLEEP_PREPARE,
 	CMD_OFFLINE,
 	CMD_ONLINE,
+
+};
+
+enum hotplug_type {
+	HOTPLUG_IN,
+	HOTPLUG_OUT,
+	HOTPLUG_DYNAMIC
 };
 
 static int on_run(void *data);
 static int dynamic_hotplug(enum hotplug_cmd cmd);
 static enum hotplug_cmd diagnose_condition(void);
 static void calc_load(void);
+extern unsigned long avg_nr_running(void);
+extern unsigned long avg_cpu_nr_running(unsigned int cpu);
 
 static enum hotplug_cmd prev_cmd = CMD_NORMAL;
 static enum hotplug_cmd exe_cmd;
@@ -119,6 +129,66 @@ static struct workqueue_struct *thread_manage_wq;
 #endif
 
 static int dm_hotplug_disable = 0;
+
+#define MULT_FACTOR	8
+#define DIV_FACTOR	100000
+#define MAX_CPUS_ONLINE NR_CPUS
+#define NR_FSHIFT MAX_CPUS_ONLINE - 1
+#define CAPACITY_RESERVE		50
+#define THREAD_CAPACITY (590 - CAPACITY_RESERVE)
+static unsigned int nr_run_hysteresis = MAX_CPUS_ONLINE * 2;
+static unsigned int nr_fshift = NR_FSHIFT;
+static unsigned int nr_run_last;
+static unsigned int cpu_count_now;
+static unsigned int cpu_count_before;
+
+struct ip_cpu_info {
+	unsigned long cpu_nr_running;
+};
+static DEFINE_PER_CPU(struct ip_cpu_info, ip_info);
+
+static unsigned int nr_run_thresholds_exynos7420[] = {
+	(THREAD_CAPACITY * 875 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 1675 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 2475 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 3275 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 6275 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 10875 * MULT_FACTOR) / DIV_FACTOR,
+	(THREAD_CAPACITY * 13075 * MULT_FACTOR) / DIV_FACTOR,
+	UINT_MAX
+};
+
+
+static unsigned int calculate_thread_stats(void)
+{
+	unsigned int avg_nr_run = avg_nr_running();
+	unsigned int nr_run;
+	unsigned int threshold_size = ARRAY_SIZE(nr_run_thresholds_exynos7420);
+
+	for (nr_run = 1; nr_run < threshold_size; nr_run++) {
+		unsigned int nr_threshold;
+		nr_threshold = nr_run_thresholds_exynos7420[nr_run - 1];
+
+		if (nr_run_last <= nr_run)
+			nr_threshold += nr_run_hysteresis;
+		if (avg_nr_run <= (nr_threshold << (FSHIFT - nr_fshift)))
+			break;
+	}
+	nr_run_last = nr_run;
+
+	return nr_run;
+}
+
+static void update_per_cpu_stat(void)
+{
+	unsigned int cpu;
+	struct ip_cpu_info *l_ip_info;
+
+	for_each_online_cpu(cpu) {
+		l_ip_info = &per_cpu(ip_info, cpu);
+		l_ip_info->cpu_nr_running = avg_cpu_nr_running(cpu);
+	}
+}
 
 static int exynos_dm_hotplug_disabled(void)
 {
@@ -494,13 +564,14 @@ static struct notifier_block fb_block = {
 	.notifier_call = fb_state_change,
 };
 
+
 #if defined(CONFIG_SENSORS_FP_LOCKSCREEN_MODE)
 extern bool fp_lockscreen_mode;
 #else
 static bool fp_lockscreen_mode = false;
 #endif
 
-static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
+static int __ref __cpu_hotplug(enum hotplug_type type, enum hotplug_cmd cmd)
 {
 	int i = 0;
 	int ret = 0;
@@ -513,7 +584,25 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 		return 0;
 
 #if defined(CONFIG_SCHED_HMP)
-	if (out_flag) {
+	if (type == HOTPLUG_DYNAMIC) {
+		if (cmd == CMD_OFFLINE) {
+			for (i = setup_max_cpus - 1; i > cpu_count_now; i--) {
+				if (cpu_online(i)) {
+					ret = cpu_down(i);
+					if (ret)
+						goto blk_out;
+				}
+			}
+		} else {
+			for (i = NR_CLUST0_CPUS; i <= cpu_count_now; i++) {
+				if (!cpu_online(i)) {
+					ret = cpu_up(i);
+					if (ret)
+						goto blk_out;
+				}
+			}
+		}
+	} else if (type == HOTPLUG_OUT) {
 		if (do_disable_hotplug)
 			goto blk_out;
 
@@ -582,7 +671,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 			if (in_low_power_mode)
 				goto blk_out;
 
-			for (i = NR_CLUST0_CPUS; i < setup_max_cpus; i++) {
+			for (i = NR_CLUST0_CPUS; i <= NR_CLUST0_CPUS; i++) {
 				if (!cpu_online(i)) {
 					ret = cpu_up(i);
 					if (ret)
@@ -609,7 +698,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 				}
 			} else {
 				if (lcd_is_on) {
-					for (i = NR_CLUST0_CPUS; i < setup_max_cpus; i++) {
+					for (i = NR_CLUST0_CPUS; i <= NR_CLUST0_CPUS; i++) {
 						if (do_hotplug_out)
 							goto blk_out;
 
@@ -631,7 +720,10 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 						}
 					}
 				} else {
-					for (i = 1; i < NR_CLUST0_CPUS; i++) {
+					for (i = 1; i <= NR_CLUST0_CPUS; i++) {
+						if (do_hotplug_out && i >= NR_CLUST0_CPUS)
+							goto blk_out;
+
 						if (!cpu_online(i)) {
 							ret = cpu_up(i);
 							if (ret)
@@ -643,7 +735,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 		}
 	}
 #else
-	if (out_flag) {
+	if (type == HOTPLUG_OUT) {
 		if (do_disable_hotplug)
 			goto blk_out;
 
@@ -658,7 +750,7 @@ static int __ref __cpu_hotplug(bool out_flag, enum hotplug_cmd cmd)
 		if (in_suspend_prepared)
 			goto blk_out;
 
-		for (i = 1; i < setup_max_cpus; i++) {
+		for (i = 1; i <= NR_CLUST0_CPUS; i++) {
 			if (!cpu_online(i)) {
 				ret = cpu_up(i);
 				if (ret)
@@ -679,22 +771,26 @@ static int dynamic_hotplug(enum hotplug_cmd cmd)
 	mutex_lock(&dm_hotplug_lock);
 
 	switch (cmd) {
+	case CMD_OFFLINE:
+	case CMD_ONLINE:
+		ret = __cpu_hotplug(HOTPLUG_DYNAMIC, cmd);
+		break;	
 	case CMD_LOW_POWER:
-		ret = __cpu_hotplug(true, cmd);
+		ret = __cpu_hotplug(HOTPLUG_OUT, cmd);
 		in_low_power_mode = true;
 		break;
 	case CMD_CLUST0_ONE_OUT:
 	case CMD_CLUST1_OUT:
 	case CMD_SLEEP_PREPARE:
-		ret = __cpu_hotplug(true, cmd);
+		ret = __cpu_hotplug(HOTPLUG_OUT, cmd);
 		break;
 	case CMD_CLUST0_ONE_IN:
 	case CMD_CLUST1_IN:
-		ret = __cpu_hotplug(false, cmd);
+		ret = __cpu_hotplug(HOTPLUG_IN, cmd);
 		break;
 	case CMD_CLUST0_IN:
 	case CMD_NORMAL:
-		ret = __cpu_hotplug(false, cmd);
+		ret = __cpu_hotplug(HOTPLUG_IN, cmd);
 		in_low_power_mode = false;
 		break;
 	}
@@ -1080,6 +1176,7 @@ static int on_run(void *data)
 {
 	int on_cpu = 0;
 	int ret;
+	int cpu_count_diff;
 
 	struct cpumask thread_cpumask;
 
@@ -1088,11 +1185,30 @@ static int on_run(void *data)
 	sched_setaffinity(0, &thread_cpumask);
 
 	while (!kthread_should_stop()) {
-		calc_load();
-		if (unlikely(exe_cmd == CMD_ONLINE || exe_cmd == CMD_OFFLINE))
- 				exe_cmd = CMD_CLUST1_OUT;
- 			else
- 				exe_cmd = diagnose_condition();
+		if (!cluster1_hotplugged && lcd_is_on) {
+		cpu_count_now = (calculate_thread_stats() - 1);
+		update_per_cpu_stat();
+
+		if (cpu_count_now < NR_CLUST0_CPUS)
+			cpu_count_now = NR_CLUST0_CPUS;
+
+		cpu_count_diff = cpu_count_now - cpu_count_before;
+		
+		if (cpu_count_diff > 0)
+			exe_cmd = CMD_ONLINE;
+		else if (cpu_count_diff < 0)
+			exe_cmd = CMD_OFFLINE;
+		else
+			goto sleep;
+
+		cpu_count_before = cpu_count_now;
+		}
+		else {
+			calc_load();
+			exe_cmd = diagnose_condition();
+			cpu_count_before = NR_CLUST0_CPUS;
+			cpu_count_diff = 0;
+		}
 
 		if (exynos_dm_hotplug_disabled()) {
 #ifdef DM_HOTPLUG_DEBUG
@@ -1101,16 +1217,7 @@ static int on_run(void *data)
 			goto sleep;
 		}
 
-		if (prev_cmd != exe_cmd) {
-#ifdef DM_HOTPLUG_DEBUG
-			pr_info("frequency info : %d, prev_cmd %d, exe_cmd %d\n",
-					cur_load_freq, prev_cmd, exe_cmd);
-			pr_info("lcd is on : %d, low power mode = %d, dm_hotplug disable = %d\n",
-					lcd_is_on, in_low_power_mode, exynos_dm_hotplug_disabled());
-#if defined(CONFIG_SCHED_HMP)
-			pr_info("cluster1 cores hotplug out : %d\n", cluster1_hotplugged);
-#endif
-#endif
+		if (prev_cmd != exe_cmd || cpu_count_diff != 0) {
 			ret = dynamic_hotplug(exe_cmd);
 			if (ret < 0) {
 				if (ret == -EBUSY)
