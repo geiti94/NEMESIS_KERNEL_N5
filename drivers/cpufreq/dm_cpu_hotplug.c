@@ -34,7 +34,7 @@
 #else
 #define NORMALMIN_FREQ	500000
 #endif
-#define POLLING_MSEC	200
+#define POLLING_MSEC	100
 #define DEFAULT_LOW_STAY_THRSHD	0
 
 struct cpu_load_info {
@@ -133,11 +133,14 @@ static int dm_hotplug_disable = 0;
 #define NR_FSHIFT MAX_CPUS_ONLINE - 1
 #define CAPACITY_RESERVE		50
 #define THREAD_CAPACITY (590 - CAPACITY_RESERVE)
+#define MIN_ONLINE_CPU 1
 static unsigned int nr_run_hysteresis = MAX_CPUS_ONLINE * 2;
 static unsigned int nr_fshift = NR_FSHIFT;
 static unsigned int nr_run_last;
 static unsigned int cpu_count_now;
 static unsigned int cpu_count_before;
+extern bool input_hotplug_flag;
+static unsigned int allowed_min_cores = 1;
 
 struct ip_cpu_info {
 	unsigned long cpu_nr_running;
@@ -176,15 +179,19 @@ static unsigned int calculate_thread_stats(void)
 	return nr_run;
 }
 
-static void update_per_cpu_stat(void)
+static bool update_per_cpu_stat(void)
 {
 	unsigned int cpu;
 	struct ip_cpu_info *l_ip_info;
+	bool cluster1_busy = 0;
 
 	for_each_online_cpu(cpu) {
 		l_ip_info = &per_cpu(ip_info, cpu);
 		l_ip_info->cpu_nr_running = avg_cpu_nr_running(cpu);
+		if (cpu >= NR_CLUST0_CPUS && l_ip_info->cpu_nr_running > CAPACITY_RESERVE)
+			cluster1_busy = 1;
 	}
+	return cluster1_busy;
 }
 
 static int exynos_dm_hotplug_disabled(void)
@@ -407,6 +414,30 @@ static ssize_t store_dm_hotplug_delay(struct kobject *kobj, struct attribute *at
 	return count;
 }
 
+static ssize_t show_min_cores(struct kobject *kobj,
+				struct attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%u\n", allowed_min_cores + 1);
+}
+
+static ssize_t store_min_cores(struct kobject *kobj, struct attribute *attr,
+					const char *buf, size_t count)
+{
+	int min_cores;
+
+	if (!sscanf(buf, "%8d", &min_cores))
+		return -EINVAL;
+
+	if (min_cores < 2 || min_cores > 8) {
+		pr_err("%s: invalid value (%d)\n", __func__, min_cores);
+		return -EINVAL;
+	}
+
+	allowed_min_cores = (unsigned int)min_cores - 1;
+
+	return count;
+}
+
 static struct global_attr enable_dm_hotplug =
 		__ATTR(enable_dm_hotplug, S_IRUGO | S_IWUSR,
 			show_enable_dm_hotplug, store_enable_dm_hotplug);
@@ -429,6 +460,10 @@ static struct global_attr dm_hotplug_delay =
 		__ATTR(dm_hotplug_delay, S_IRUGO | S_IWUSR,
 			show_dm_hotplug_delay, store_dm_hotplug_delay);
 #endif
+
+static struct global_attr min_cores =
+		__ATTR(min_cores, S_IRUGO | S_IWUSR,
+			show_min_cores, store_min_cores);
 
 static inline u64 get_cpu_idle_time_jiffy(unsigned int cpu, u64 *wall)
 {
@@ -586,7 +621,7 @@ static int __ref __cpu_hotplug(enum hotplug_type type, enum hotplug_cmd cmd)
 				}
 			}
 		} else {
-			for (i = NR_CLUST0_CPUS; i <= cpu_count_now; i++) {
+			for (i = MIN_ONLINE_CPU; i <= cpu_count_now; i++) {
 				if (!cpu_online(i)) {
 					ret = cpu_up(i);
 					if (ret)
@@ -1168,6 +1203,7 @@ static int on_run(void *data)
 	int on_cpu = 0;
 	int ret;
 	int cpu_count_diff;
+	bool cluster1_busy;
 
 	struct cpumask thread_cpumask;
 
@@ -1178,10 +1214,15 @@ static int on_run(void *data)
 	while (!kthread_should_stop()) {
 		if (!cluster1_hotplugged && lcd_is_on) {
 		cpu_count_now = (calculate_thread_stats() - 1);
-		update_per_cpu_stat();
+		cluster1_busy = update_per_cpu_stat();
 
-		if (cpu_count_now < NR_CLUST0_CPUS)
+		if (likely(cpu_count_now < NR_CLUST0_CPUS && ((cluster1_busy)||(input_hotplug_flag == true))))
 			cpu_count_now = NR_CLUST0_CPUS;
+		else if (!cluster1_busy && cpu_count_now >= NR_CLUST0_CPUS && input_hotplug_flag == false)
+			cpu_count_now --;
+
+		if (cpu_count_now < allowed_min_cores)
+			cpu_count_now = allowed_min_cores;
 
 		cpu_count_diff = cpu_count_now - cpu_count_before;
 		
@@ -1326,6 +1367,13 @@ static int __init dm_cpu_hotplug_init(void)
 	}
 #endif
 
+	ret = sysfs_create_file(power_kobj, &min_cores.attr);
+	if (ret) {
+		pr_err("%s: failed to create min_cores sysfs interface\n",
+			__func__);
+		goto err_min_cores;
+	}
+
 #ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
 	policy = cpufreq_cpu_get(NR_CLUST0_CPUS);
 	if (!policy) {
@@ -1399,6 +1447,8 @@ err_hotplug_nr_running:
 err_cluster0_core_hotplug_in:
 #endif
 	sysfs_remove_file(power_kobj, &enable_dm_hotplug.attr);
+err_min_cores:
+	sysfs_remove_file(power_kobj, &min_cores.attr);
 err_enable_dm_hotplug:
 #endif
 	fb_unregister_client(&fb_block);

@@ -89,6 +89,8 @@ struct fts_touchkey fts_touchkeys[] = {
 };
 #endif
 
+bool input_hotplug_flag;
+
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
 extern int tui_force_close(uint32_t arg);
 struct fts_ts_info *tui_tsp_info;
@@ -675,6 +677,7 @@ void fts_release_all_key(struct fts_ts_info *info)
 	unsigned char key_recent = TOUCH_KEY_RECENT;
 	unsigned char key_back = TOUCH_KEY_BACK;
 
+	input_hotplug_flag = false;
 	if (info->board->support_mskey && info->tsp_keystatus != TOUCH_KEY_NULL) {
 		if (info->tsp_keystatus & key_recent) {
 			input_report_key(info->input_dev, KEY_RECENT, KEY_RELEASE);
@@ -886,6 +889,7 @@ static unsigned char fts_event_handler_type_b(struct fts_ts_info *info,
 
 					change_keys = input_keys ^ info->tsp_keystatus;
 
+					input_hotplug_flag = true;
 					if (change_keys & key_recent) {
 						key_state = input_keys & key_recent;
 
@@ -1039,6 +1043,7 @@ static unsigned char fts_event_handler_type_b(struct fts_ts_info *info,
 
 			info->touch_count++;
 #if defined (CONFIG_INPUT_BOOSTER)
+			input_hotplug_flag = true;
 			booster_restart = true;
 #endif
 		case EVENTID_MOTION_POINTER:
@@ -1402,6 +1407,7 @@ static unsigned char fts_event_handler_type_b(struct fts_ts_info *info,
 		if (booster_restart)
 			input_booster_send_event(BOOSTER_DEVICE_TOUCH, BOOSTER_MODE_ON);
 		if (!info->touch_count)
+			input_hotplug_flag = false;
 			input_booster_send_event(BOOSTER_DEVICE_TOUCH, BOOSTER_MODE_OFF);
 	}
 #endif
@@ -2427,6 +2433,7 @@ void fts_release_all_finger(struct fts_ts_info *info)
 {
 	int i;
 
+	input_hotplug_flag = false;
 	for (i = 0; i < FINGER_MAX; i++) {
 		input_mt_slot(info->input_dev, i);
 		input_mt_report_slot_state(info->input_dev, MT_TOOL_FINGER, 0);
