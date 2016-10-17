@@ -137,6 +137,7 @@ struct panel_private {
 	struct mutex lock;
 	struct dsim_panel_ops *ops;
 	unsigned int panel_type;
+	unsigned char panel_rev;
 #ifdef CONFIG_EXYNOS_DECON_MDNIE_LITE
 	unsigned int mdnie_support;
 #endif
@@ -162,10 +163,10 @@ struct panel_private {
 	unsigned char prev_VT[2];
 	unsigned char alpm_support;			// because zero2 use 2panel(ha2, hf3)
 #endif
-
-#ifdef CONFIG_LCD_DOZE_MODE
 	unsigned int 	alpm_support;	// 0 : unsupport, 1 : 30hz, 2 : 1hz
 	unsigned int	hlpm_support;	// 0 : unsupport, 1 : 30hz
+
+#ifdef CONFIG_LCD_DOZE_MODE
 	unsigned int alpm_mode;
 	unsigned int curr_alpm_mode;
 #endif
@@ -197,11 +198,14 @@ struct dsim_panel_ops {
 	int (*enteralpm)(struct dsim_device *dsim);
 	int (*exitalpm)(struct dsim_device *dsim);
 #endif
+#ifdef CONFIG_FB_DSU
+	int (*dsu_cmd)(struct dsim_device *dsim);
+#endif
 };
 
 struct dsim_device {
 	struct device *dev;
-	void * decon;
+	void *decon;
 	struct dsim_resources res;
 	unsigned int irq;
 	void __iomem *reg_base;
@@ -236,13 +240,16 @@ struct dsim_device {
 	struct mutex rdwr_lock;
 
 	struct panel_private priv;
-
 	struct dsim_clks_param clks_param;
 #ifdef CONFIG_LCD_ALPM
 	int 			alpm;
 #endif
 #ifdef CONFIG_LCD_DOZE_MODE
 	unsigned int dsim_doze;
+#endif
+#ifdef CONFIG_FB_DSU
+	int dsu_xres;
+	int dsu_yres;
 #endif
 };
 
@@ -260,10 +267,14 @@ struct mipi_dsim_lcd_driver {
 	int	(*suspend)(struct dsim_device *dsim);
 	int	(*displayon)(struct dsim_device *dsim);
 	int	(*resume)(struct dsim_device *dsim);
-	int (*dump)(struct dsim_device *dsim);
+	int	(*dump)(struct dsim_device *dsim);
 #ifdef CONFIG_LCD_DOZE_MODE
 	int (*enteralpm)(struct dsim_device *dsim);
 	int (*exitalpm)(struct dsim_device *dsim);
+#endif
+#ifdef CONFIG_FB_DSU
+	int (*dsu_cmd)(struct dsim_device *dsim);
+	int (*init)(struct dsim_device *dsim);
 #endif
 };
 
@@ -275,12 +286,6 @@ int dsim_read_data(struct dsim_device *dsim, u32 data_id, u32 addr,
 #ifdef CONFIG_DECON_MIPI_DSI_PKTGO
 void dsim_pkt_go_ready(struct dsim_device *dsim);
 void dsim_pkt_go_enable(struct dsim_device *dsim, bool enable);
-#endif
-
-#if defined(CONFIG_LCD_ALPM) || defined(CONFIG_LCD_DOZE_MODE)
-#define	ALPM_OFF							0
-#define ALPM_ON							1
-int alpm_set_mode(struct dsim_device *dsim, int enable);
 #endif
 
 static inline struct dsim_device *get_dsim_drvdata(u32 id)
@@ -341,6 +346,15 @@ static inline void dsim_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 #define DSIM_IOC_PARTIAL_CMD		_IOW('D', 6, u32)
 #define DSIM_IOC_SET_PORCH		_IOW('D', 7, struct decon_lcd *)
 #define DSIM_IOC_DUMP			_IOW('D', 8, u32)
+
+#ifdef CONFIG_FB_DSU
+#define DSIM_IOC_DSU_CMD            _IOW('D', 12, u32)
+#define DSIM_IOC_DSU_DSC            _IOW('D', 13, u32)
+#define DSIM_IOC_TE_ONOFF           _IOW('D', 14, u32)
+#define DSIM_IOC_DSU_RECONFIG   _IOW('D', 15, u32)
+#define DSIM_IOC_DISPLAY_ONOFF	    _IOW('D', 16, u32)
+#define DSIM_IOC_REG_LOCK	_IOW('D', 17, u32)
+#endif
 
 #define DSIM_REQ_POWER_OFF		0
 #define DSIM_REQ_POWER_ON		1

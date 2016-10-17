@@ -160,6 +160,9 @@ struct exynos_decon_platdata {
 	enum decon_psr_mode	psr_mode;
 	enum decon_trig_mode	trig_mode;
 	enum decon_dsi_mode	dsi_mode;
+	enum decon_output_type	out_type;
+	int	out_idx;	/* dsim index */
+	int	out1_idx;	/* dsim index for dual DSI */
 	int	max_win;
 	int	default_win;
 };
@@ -473,15 +476,6 @@ union decon_ioctl_data {
 	u32 vsync;
 };
 
-#ifdef CONFIG_LCD_DOZE_MODE
-enum decon_doze_mode {
-	DECON_DOZE_STATE_NORMAL = 0,
-	DECON_DOZE_STATE_DOZE,
-	DECON_DOZE_STATE_SUSPEND,
-	DECON_DOZE_STATE_DOZE_SUSPEND
-};
-#endif
-
 struct decon_underrun_stat {
 	int	prev_bw;
 	int	prev_int_bw;
@@ -703,6 +697,15 @@ struct vpp_drm_log {
 	bool protection;
 };
 
+#ifdef CONFIG_LCD_DOZE_MODE
+enum decon_doze_mode {
+	DECON_DOZE_STATE_NORMAL = 0,
+	DECON_DOZE_STATE_DOZE,
+	DECON_DOZE_STATE_SUSPEND,
+	DECON_DOZE_STATE_DOZE_SUSPEND
+};
+#endif
+
 struct decon_device {
 	void __iomem			*regs;
 	void __iomem			*sys_regs;
@@ -788,6 +791,10 @@ struct decon_device {
 	u32				disp_ss_size_log_idx;
 	struct disp_ss_size_err_info	disp_ss_size_log[DISP_EVENT_SIZE_ERR_MAX];
 #endif
+	struct pinctrl			*pinctrl;
+        struct pinctrl_state 		*decon_te_on;
+        struct pinctrl_state		*decon_te_off;
+	struct pm_qos_request		mif_qos;
 	struct pm_qos_request		int_qos;
 	struct pm_qos_request		disp_qos;
 	int				frame_done_cnt_cur;
@@ -956,22 +963,19 @@ static inline bool is_cam_not_running(struct decon_device *decon)
 }
 static inline bool decon_lpd_enter_cond(struct decon_device *decon)
 {
-#if defined(CONFIG_LCD_ALPM) || defined(CONFIG_LCD_HMT) || defined(CONFIG_LCD_DOZE_MODE)
+#if defined(CONFIG_LCD_ALPM) || defined(CONFIG_LCD_HMT)
 	struct dsim_device *dsim = NULL;
 	dsim = container_of(decon->output_sd, struct dsim_device, sd);
 #endif
 	return ((atomic_read(&decon->lpd_block_cnt) <= 0) && is_cam_not_running(decon)
 #ifdef CONFIG_LCD_ALPM
-	&& (!dsim->alpm)
+		&& (!dsim->alpm)
 #endif
 #ifdef CONFIG_LCD_HMT
-	&& (!dsim->priv.hmt_on)
+		&& (!dsim->priv.hmt_on)
 #endif
 #if defined(CONFIG_EXYNOS_DECON_MDNIE)
-	&& (decon->mdnie->auto_brightness < 6)
-#endif
-#ifdef CONFIG_LCD_DOZE_MODE
-	&& (!dsim->dsim_doze)
+		&& (decon->mdnie->auto_brightness < 6)
 #endif
 		&& (atomic_inc_return(&decon->lpd_trig_cnt) >= DECON_ENTER_LPD_CNT));
 

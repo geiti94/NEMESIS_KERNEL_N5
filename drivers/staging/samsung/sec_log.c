@@ -260,7 +260,7 @@ out:
 }
 __setup("sec_tsp_log=", sec_tsp_log_setup);
 
-static int sec_tsp_log_timestamp(unsigned long idx)
+static int sec_tsp_log_timestamp(unsigned int idx)
 {
 	/* Add the current time stamp */
 	char tbuf[50];
@@ -293,8 +293,8 @@ void sec_debug_tsp_log(char *fmt, ...)
 	va_list args;
 	char buf[TSP_BUF_SIZE];
 	int len = 0;
-	unsigned long idx;
-	unsigned long size;
+	unsigned int idx;
+	unsigned int size;
 
 	/* In case of sec_tsp_log_setup is failed */
 	if (!sec_tsp_log_size)
@@ -311,10 +311,10 @@ void sec_debug_tsp_log(char *fmt, ...)
 	/* Overflow buffer size */
 	if (idx + size > sec_tsp_log_size - 1) {
 		len = scnprintf(&sec_tsp_log_buf[0],
-						size + 1, "%s\n", buf);
+						size + 1, "%s", buf);
 		*sec_tsp_log_ptr = len;
 	} else {
-		len = scnprintf(&sec_tsp_log_buf[idx], size + 1, "%s\n", buf);
+		len = scnprintf(&sec_tsp_log_buf[idx], size + 1, "%s", buf);
 		*sec_tsp_log_ptr += len;
 	}
 }
@@ -438,31 +438,27 @@ static int __init sec_tsp_log_late_init(void)
 late_initcall(sec_tsp_log_late_init);
 #endif /* CONFIG_SEC_DEBUG_TSP_LOG */
 
-
 #ifdef CONFIG_SEC_DEBUG_LAST_KMSG
 static char *last_kmsg_buffer;
 static size_t last_kmsg_size;
-void sec_debug_save_last_kmsg(unsigned char* head_ptr, unsigned char* curr_ptr)
+void sec_debug_save_last_kmsg(unsigned char* head_ptr, unsigned char* curr_ptr,
+	size_t log_size)
 {
-	size_t size;
-
 	if (head_ptr == NULL || curr_ptr == NULL || head_ptr == curr_ptr) {
 		pr_err("%s: no data \n", __func__);
 		return;
 	}
 
-	size = (size_t)(curr_ptr - head_ptr);
-	if (size <= 0) {
-		pr_err("%s: invalid args \n", __func__);
-		return;
-	}
+	last_kmsg_size = 0x200000;
 
 	/* provide previous log as last_kmsg */
-	last_kmsg_size = min((size_t)(1 << CONFIG_LOG_BUF_SHIFT), size);
 	last_kmsg_buffer = (char *)kzalloc(last_kmsg_size, GFP_NOWAIT);
 
 	if (last_kmsg_size && last_kmsg_buffer) {
-		memcpy(last_kmsg_buffer, curr_ptr-last_kmsg_size, last_kmsg_size);
+		unsigned i;
+		// Relocate the last kmsg log buffer
+		for (i = 0; i < last_kmsg_size; i++)
+			last_kmsg_buffer[i] = head_ptr[((size_t)(curr_ptr - head_ptr) - last_kmsg_size + i) & (log_size -1)];
 		pr_info("%s: successed\n", __func__);
 	} else
 		pr_err("%s: failed\n", __func__);

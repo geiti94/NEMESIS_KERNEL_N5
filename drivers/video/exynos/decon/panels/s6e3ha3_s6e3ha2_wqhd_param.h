@@ -41,7 +41,7 @@ struct lcd_seq_info
 #define CAPS_IS_ON(level)	(level >= 41)
 
 #define NORMAL_TEMPERATURE			25      /* 25 degrees Celsius */
-#define EXTEND_BRIGHTNESS 			365
+#define EXTEND_BRIGHTNESS			365
 #define UI_MAX_BRIGHTNESS 			255
 #define UI_MIN_BRIGHTNESS 			0
 #define UI_DEFAULT_BRIGHTNESS 		128
@@ -61,9 +61,9 @@ enum
 
 enum
 {
-	ACL_STATUS_OFF,
-	ACL_STATUS_ON,
-	ACL_STATUS_MAX
+        ACL_STATUS_OFF,
+        ACL_STATUS_ON,
+        ACL_STATUS_MAX
 };
 
 enum
@@ -921,6 +921,7 @@ static const unsigned char S6E3HF3_SEQ_TSP_TE[] = {
         0x11, 0x11, 0x02, 0x16, 0x02, 0x16
 };
 
+static const unsigned char HF4_A3_IRC_off[2] = {0xB8, 0x00};
 
 static const unsigned char S6E3HF3_SEQ_DISPLAY_TIMING1[] = {
         0xB0,
@@ -930,6 +931,20 @@ static const unsigned char S6E3HF3_SEQ_DISPLAY_TIMING2[] = {
         0xEF,
         0x12, 0x9C
 };
+
+#ifdef CONFIG_LCD_DOZE_MODE
+#define	ALPM_OFF						0
+#define ALPM_ON_2NIT					1
+#define HLPM_ON_2NIT                    2
+#define ALPM_ON_40NIT                   3
+#define HLPM_ON_40NIT                   4
+#endif
+
+#if defined(CONFIG_LCD_ALPM) || defined(CONFIG_LCD_DOZE_MODE)
+#define UNSUPPORT_ALPM					0
+#define SUPPORT_30HZALPM				1
+#define SUPPORT_LOWHZALPM				2
+#endif
 
 static const unsigned char S6E3HF3_SEQ_PENTILE_SETTING[] = {
 	0xC2,
@@ -965,13 +980,104 @@ static const unsigned char S6E3HF3_SEQ_DCDC[] = {
 
 
 
-#ifdef CONFIG_LCD_ALPM
-static const unsigned char SEQ_ALPM2NIT_MODE_ON[] = {
+#if defined (CONFIG_LCD_ALPM) || defined(CONFIG_LCD_DOZE_MODE)
+
+#define	ALPM_OFF						0
+#define ALPM_ON_2NIT					1
+#define HLPM_ON_2NIT                    2
+#define ALPM_ON_40NIT                   3
+#define HLPM_ON_40NIT                   4
+
+#define UNSUPPORT_ALPM					0
+#define SUPPORT_30HZALPM				1
+#define SUPPORT_LOWHZALPM				2
+
+static const unsigned char SEQ_2NIT_MODE_ON[] = {
 	0x53, 0x03
+};
+
+static const unsigned char SEQ_40NIT_MODE_ON[] = {
+	0x53, 0x02
 };
 
 static const unsigned char SEQ_NORMAL_MODE_ON[] = {
 	0x53, 0x00
+};
+
+
+static const unsigned char SEQ_SELECT_ALPM_2NIT_HF4[] = {
+	0xBB,
+	0x00, 0xC4
+};
+
+static const unsigned char SEQ_SELECT_HLPM_2NIT_HF4[] = {
+	0xBB,
+	0x00, 0x54
+};
+
+static const unsigned char SEQ_SELECT_ALPM_40NIT_HF4[] = {
+	0xBB,
+	0x00, 0x84
+};
+
+static const unsigned char SEQ_SELECT_HLPM_40NIT_HF4[] = {
+	0xBB,
+	0x00, 0x14
+};
+
+static const unsigned char SEQ_MCLK_1SET_HF4[] = {
+	0xCB,
+	0x12, 0x11, 0x81, 0x01, 0x00, 0x63, 0x82, 0x00, 0x00,
+	0x10, 0x01
+};
+
+static const unsigned char SEQ_MCLK_3SET_HF4[] = {
+	0xCB,
+	0x12, 0x11, 0x81, 0x01, 0x00, 0x63, 0x82, 0x00, 0x00,
+	0x0C, 0x05
+};
+
+
+static const unsigned char SEQ_SELECT_ALPM_HA3[] = {
+	0xBB,
+	0xC4
+};
+
+static const unsigned char SEQ_SELECT_HLPM_HA3[] = {
+	0xBB,
+	0x54
+};
+
+
+static const unsigned char SEQ_AOD_LOWHZ_ON[] = {
+	0xBB, 0x01
+};
+
+static const unsigned char SEQ_AOD_LOWHZ_OFF[] = {
+	0xBB, 0x00
+};
+
+static const unsigned char SEQ_AID_MOD_OFF[] = {
+	0xBD, 0x00
+};
+
+static const unsigned char SEQ_AID_MOD_ON[] = {
+	0xBD,
+	0x01, 0x05, 0xF8, 0x05, 0xDA, 0x05, 0xB4, 0x05,
+	0x8E, 0x05, 0x70, 0x05, 0x4E, 0x05, 0x28, 0x05,
+	0x08, 0x04, 0xE3, 0x04, 0xC4, 0x04, 0xA2, 0x04,
+	0x81, 0x04, 0x5F, 0x04, 0x3F, 0x04, 0x2E, 0x04,
+	0x0B, 0x03, 0xE9, 0x03, 0xD6, 0x03, 0xB4, 0x03,
+	0x92, 0x03, 0x7F, 0x03, 0x7F, 0x03, 0x6F, 0x03,
+	0x4D,
+};
+
+static const unsigned char SEQ_2HZ_GPARA[] = {
+	0xB0, 0x1E
+};
+
+static const unsigned char SEQ_2HZ_SET[] = {
+	0xFE, 0x0F
 };
 
 #endif

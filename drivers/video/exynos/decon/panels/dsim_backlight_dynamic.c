@@ -63,6 +63,7 @@ get_gamma_err:
 	return NULL;
 }
 
+
 static unsigned char *get_elvss_from_index(struct dsim_device *dsim, int index, int caps)
 {
 	struct panel_private *panel = &dsim->priv;

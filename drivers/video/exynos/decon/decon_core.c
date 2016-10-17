@@ -28,6 +28,7 @@
 #include <linux/dma-buf.h>
 #include <linux/exynos_ion.h>
 #include <linux/ion.h>
+#include <linux/irq.h>
 #include <linux/highmem.h>
 #include <linux/memblock.h>
 #include <linux/exynos_iovmm.h>
@@ -36,7 +37,6 @@
 #include <linux/smc.h>
 #include <linux/debugfs.h>
 #include <linux/of_gpio.h>
-#include <linux/irq.h>
 
 #include <mach/regs-clock.h>
 #include <mach/exynos-pm.h>
@@ -1460,7 +1460,6 @@ int decon_enable(struct decon_device *decon)
 #ifdef CONFIG_LCD_DOZE_MODE
 		if (is_lcd_on) {
 			decon_info("%s :doze mode : %d\n", __func__, decon->decon_doze);
-
 			if ((decon->decon_doze == DECON_DOZE_STATE_DOZE) ||
 				(decon->decon_doze == DECON_DOZE_STATE_DOZE_SUSPEND)) {
 				ret = v4l2_subdev_call(decon->output_sd, video, s_stream, DSIM_REQ_POWER_ON);
@@ -4568,7 +4567,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 				}
 				ret = decon_doze_suspend(decon);
 				if (ret) {
-					decon_err("ERR:%s:failed to decon_doze_suspend():%d\n", __func__, ret);
+					decon_err("ERR:%s:failed to decon_doze_enable():%d\n", __func__, ret);
 					if (decon->vsync_backup == true) {
 						decon->ignore_vsync = false;
 						decon->vsync_backup = false;

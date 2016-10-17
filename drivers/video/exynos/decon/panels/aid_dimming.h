@@ -64,6 +64,7 @@ struct SmtDimInfo {
 	unsigned char *elv;
 	unsigned char gamma[OLED_CMD_GAMMA_CNT];
 	unsigned int way;
+	signed char* elvss_offset;
 };
 
 #endif
