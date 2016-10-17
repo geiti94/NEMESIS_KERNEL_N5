@@ -2533,7 +2533,7 @@ int s6e3ha3_wqhd_setalpm(struct dsim_device *dsim, int mode)
 			goto exit_setalpm;
 	}
 
-	dsim_write_hl_data(dsim, HF4_A3_IRC_off, ARRAY_SIZE(HF4_A3_IRC_off));
+	dsim_write_hl_data(dsim, HF3_A3_IRC_off, ARRAY_SIZE(HF3_A3_IRC_off));
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE, ARRAY_SIZE(SEQ_GAMMA_UPDATE));
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE_L, ARRAY_SIZE(SEQ_GAMMA_UPDATE_L));
 
@@ -3043,7 +3043,6 @@ static int s6e3hf3_wqhd_exit(struct dsim_device *dsim)
 			dsim_err("%s : fail to write CMD : DISPLAY_OFF\n", __func__);
 			goto exit_err;
 		}
-
 		ret = dsim_write_hl_data(dsim, SEQ_SLEEP_IN, ARRAY_SIZE(SEQ_SLEEP_IN));
 		if (ret < 0) {
 			dsim_err("%s : fail to write CMD : SLEEP_IN\n", __func__);
@@ -3312,18 +3311,18 @@ init_exit:
 #ifdef CONFIG_LCD_DOZE_MODE
 
 #if 0
-static int s6e3hf4_wqhd_commonn_init(struct dsim_device *dsim)
+static int s6e3hf3_wqhd_commonn_init(struct dsim_device *dsim)
 {
 	int ret = 0;
 	msleep(5);
 
-	ret = dsim_write_data(dsim, MIPI_DSI_DSC_PRA, S6E3HF4_SEQ_DSC_EN[0], S6E3HF4_SEQ_DSC_EN[1]);
+	ret = dsim_write_data(dsim, MIPI_DSI_DSC_PRA, S6E3HF3_SEQ_DSC_EN[0], S6E3HF3_SEQ_DSC_EN[1]);
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_DSC_EN\n", __func__);
 		goto init_exit;
 	}
 
-	ret = dsim_write_data(dsim, MIPI_DSI_DSC_PPS, (unsigned long)S6E3HF4_SEQ_PPS_SLICE4, ARRAY_SIZE(S6E3HF4_SEQ_PPS_SLICE4));
+	ret = dsim_write_data(dsim, MIPI_DSI_DSC_PPS, (unsigned long)S6E3HF3_SEQ_PPS_SLICE4, ARRAY_SIZE(S6E3HF3_SEQ_PPS_SLICE4));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_PPS_SLICE4\n", __func__);
 		goto init_exit;
@@ -3338,29 +3337,29 @@ static int s6e3hf4_wqhd_commonn_init(struct dsim_device *dsim)
 	msleep(120);
 
 	/* Common Setting */
-	ret = dsim_write_hl_data(dsim, S6E3HF4_SEQ_TE_ON, ARRAY_SIZE(S6E3HF4_SEQ_TE_ON));
+	ret = dsim_write_hl_data(dsim, S6E3HF3_SEQ_TE_ON, ARRAY_SIZE(S6E3HF3_SEQ_TE_ON));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_TE_ON\n", __func__);
 		goto init_exit;
 	}
 
-	ret = dsim_write_hl_data(dsim, S6E3HF4_SEQ_TSP_TE, ARRAY_SIZE(S6E3HF4_SEQ_TSP_TE));
+	ret = dsim_write_hl_data(dsim, S6E3HF3_SEQ_TSP_TE, ARRAY_SIZE(S6E3HF3_SEQ_TSP_TE));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_TSP_TE\n", __func__);
 		goto init_exit;
 	}
 
-	ret = dsim_write_hl_data(dsim, S6E3HF4_SEQ_ERR_FG_SETTING, ARRAY_SIZE(S6E3HF4_SEQ_ERR_FG_SETTING));
+	ret = dsim_write_hl_data(dsim, S6E3HF3_SEQ_ERR_FG_SETTING, ARRAY_SIZE(S6E3HF3_SEQ_ERR_FG_SETTING));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_ERR_FG_SETTING\n", __func__);
 		goto init_exit;
 	}
-	ret = dsim_write_hl_data(dsim, S6E3HF4_SEQ_TE_START_SETTING, ARRAY_SIZE(S6E3HF4_SEQ_TE_START_SETTING));
+	ret = dsim_write_hl_data(dsim, S6E3HF3_SEQ_TE_START_SETTING, ARRAY_SIZE(S6E3HF3_SEQ_TE_START_SETTING));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_TE_START_SETTING\n", __func__);
 		goto init_exit;
 	}
-	ret = dsim_write_hl_data(dsim, S6E3HF4_SEQ_FFC_SET, ARRAY_SIZE(S6E3HF4_SEQ_FFC_SET));
+	ret = dsim_write_hl_data(dsim, S6E3HF3_SEQ_FFC_SET, ARRAY_SIZE(S6E3HF3_SEQ_FFC_SET));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_FFC_SET\n", __func__);
 		goto init_exit;
@@ -3372,7 +3371,7 @@ init_exit:
 #endif
 
 
-int s6e3hf4_wqhd_setalpm(struct dsim_device *dsim, int mode)
+int s6e3hf3_wqhd_setalpm(struct dsim_device *dsim, int mode)
 {
 	int ret = 0;
 
@@ -3381,24 +3380,24 @@ int s6e3hf4_wqhd_setalpm(struct dsim_device *dsim, int mode)
 	switch(mode) {
 		case HLPM_ON_2NIT:
 			if (priv->panel_rev >= 5) {
-				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON));
-				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF4, ARRAY_SIZE(SEQ_MCLK_1SET_HF4));
+				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3));
 			}
 			else {
-				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON));
 			}
 			pr_info("%s : HLPM_ON_2NIT !\n", __func__);
 			break;
 		case ALPM_ON_2NIT:
 			if (priv->panel_rev >= 5) {
-				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON));
-				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF4, ARRAY_SIZE(SEQ_MCLK_1SET_HF4));
+				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3));
 			}
 			else {
-				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON));
 			}
 			pr_info("%s : ALPM_ON_2NIT !\n", __func__);
@@ -3406,13 +3405,13 @@ int s6e3hf4_wqhd_setalpm(struct dsim_device *dsim, int mode)
 		case HLPM_ON_40NIT:
 			if (priv->panel_rev >= 5) {
 				//alpm_write_set(dsim, SEQ_HLPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_HLPM_40NIT_ON_SET));
-				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_40NIT_HF4, ARRAY_SIZE(SEQ_SELECT_HLPM_40NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_40NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_40NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON));
-				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF4, ARRAY_SIZE(SEQ_MCLK_1SET_HF4));
+				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3));
 			}
 			else {
 				//alpm_write_set(dsim, SEQ_HLPM_40NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_HLPM_40NIT_ON_SET_OLD));
-				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON));
 			}
 			pr_info("%s : HLPM_ON_40NIT !\n", __func__);
@@ -3426,13 +3425,13 @@ int s6e3hf4_wqhd_setalpm(struct dsim_device *dsim, int mode)
 			}
 			if (priv->panel_rev >= 5) {
 				//alpm_write_set(dsim, SEQ_ALPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_ALPM_40NIT_ON_SET));
-				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_40NIT_HF4, ARRAY_SIZE(SEQ_SELECT_ALPM_40NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_40NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_40NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON));
-				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF4, ARRAY_SIZE(SEQ_MCLK_1SET_HF4));
+				dsim_write_hl_data(dsim, SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3));
 			}
 			else {
 				//alpm_write_set(dsim, SEQ_ALPM_40NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_ALPM_40NIT_ON_SET_OLD));
-				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF4, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF4));
+				dsim_write_hl_data(dsim, SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3));
 				dsim_write_hl_data(dsim, SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON));
 			}
 			pr_info("%s : ALPM_ON_40NIT !\n", __func__);
@@ -3441,7 +3440,7 @@ int s6e3hf4_wqhd_setalpm(struct dsim_device *dsim, int mode)
 			pr_info("%s: input is out of range : %d \n", __func__, mode);
 			break;
 	}
-	dsim_write_hl_data(dsim, HF4_A3_IRC_off, ARRAY_SIZE(HF4_A3_IRC_off));
+	dsim_write_hl_data(dsim, HF3_A3_IRC_off, ARRAY_SIZE(HF3_A3_IRC_off));
 
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE, ARRAY_SIZE(SEQ_GAMMA_UPDATE));
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE_L, ARRAY_SIZE(SEQ_GAMMA_UPDATE_L));
@@ -3477,7 +3476,7 @@ static int s6e3hf3_wqhd_enteralpm(struct dsim_device *dsim)
 		dsim_err("%s : fail to write CMD : SEQ_DISPLAY_OFF\n", __func__);
 	}
 
-	ret = s6e3hf4_wqhd_setalpm(dsim, panel->alpm_mode);
+	ret = s6e3hf3_wqhd_setalpm(dsim, panel->alpm_mode);
 	if (ret < 0) {
 		dsim_err("%s : failed to set alpm\n", __func__);
 	}
@@ -3523,7 +3522,7 @@ static int s6e3hf3_wqhd_exitalpm(struct dsim_device *dsim)
 
 	if (panel->panel_rev >= 5) {
 		//alpm_write_set(dsim, SEQ_NORMAL_MODE_ON_SET, ARRAY_SIZE(SEQ_NORMAL_MODE_ON_SET));
-		dsim_write_hl_data(dsim, SEQ_MCLK_3SET_HF4, ARRAY_SIZE(SEQ_MCLK_3SET_HF4));
+		dsim_write_hl_data(dsim, SEQ_MCLK_3SET_HF3, ARRAY_SIZE(SEQ_MCLK_3SET_HF3));
 		dsim_write_hl_data(dsim, SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON));
 	}
 	else {

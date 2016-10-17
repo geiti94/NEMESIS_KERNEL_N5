@@ -921,7 +921,7 @@ static const unsigned char S6E3HF3_SEQ_TSP_TE[] = {
         0x11, 0x11, 0x02, 0x16, 0x02, 0x16
 };
 
-static const unsigned char HF4_A3_IRC_off[2] = {0xB8, 0x00};
+static const unsigned char HF3_A3_IRC_off[2] = {0xB8, 0x00};
 
 static const unsigned char S6E3HF3_SEQ_DISPLAY_TIMING1[] = {
         0xB0,
@@ -1005,33 +1005,33 @@ static const unsigned char SEQ_NORMAL_MODE_ON[] = {
 };
 
 
-static const unsigned char SEQ_SELECT_ALPM_2NIT_HF4[] = {
+static const unsigned char SEQ_SELECT_ALPM_2NIT_HF3[] = {
 	0xBB,
 	0x00, 0xC4
 };
 
-static const unsigned char SEQ_SELECT_HLPM_2NIT_HF4[] = {
+static const unsigned char SEQ_SELECT_HLPM_2NIT_HF3[] = {
 	0xBB,
 	0x00, 0x54
 };
 
-static const unsigned char SEQ_SELECT_ALPM_40NIT_HF4[] = {
+static const unsigned char SEQ_SELECT_ALPM_40NIT_HF3[] = {
 	0xBB,
 	0x00, 0x84
 };
 
-static const unsigned char SEQ_SELECT_HLPM_40NIT_HF4[] = {
+static const unsigned char SEQ_SELECT_HLPM_40NIT_HF3[] = {
 	0xBB,
 	0x00, 0x14
 };
 
-static const unsigned char SEQ_MCLK_1SET_HF4[] = {
+static const unsigned char SEQ_MCLK_1SET_HF3[] = {
 	0xCB,
 	0x12, 0x11, 0x81, 0x01, 0x00, 0x63, 0x82, 0x00, 0x00,
 	0x10, 0x01
 };
 
-static const unsigned char SEQ_MCLK_3SET_HF4[] = {
+static const unsigned char SEQ_MCLK_3SET_HF3[] = {
 	0xCB,
 	0x12, 0x11, 0x81, 0x01, 0x00, 0x63, 0x82, 0x00, 0x00,
 	0x0C, 0x05
