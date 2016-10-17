@@ -2334,12 +2334,6 @@ static int s6e3ha3_wqhd_init(struct dsim_device *dsim)
 		goto init_exit;
 	}
 
-	ret = dsim_write_hl_data(dsim, S6E3HA3_SEQ_TSP_TE, ARRAY_SIZE(S6E3HA3_SEQ_TSP_TE));
-	if (ret < 0) {
-		dsim_err("%s : fail to write CMD : SEQ_TSP_TE\n", __func__);
-		goto init_exit;
-	}
-
 	ret = dsim_write_hl_data(dsim, S6E3HA3_SEQ_PCD, ARRAY_SIZE(S6E3HA3_SEQ_PCD));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : S6E3HA3_SEQ_PCD\n", __func__);
@@ -2421,6 +2415,12 @@ static int s6e3ha3_wqhd_init(struct dsim_device *dsim)
 		goto init_exit;
 	}
 #endif
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_FC, ARRAY_SIZE(SEQ_TEST_KEY_OFF_FC));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_FC\n", __func__);
+		goto init_exit;
+	}
+
 	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_F0\n", __func__);
@@ -2593,6 +2593,10 @@ static int s6e3ha3_wqhd_enteralpm(struct dsim_device *dsim)
 	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_F0\n", __func__);
+	}
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_FC, ARRAY_SIZE(SEQ_TEST_KEY_OFF_FC));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_FC\n", __func__);
 	}
 
 	return ret;
