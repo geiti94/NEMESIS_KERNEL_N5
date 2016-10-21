@@ -118,7 +118,9 @@ static ssize_t mcd_mode_store(struct device *dev,
 
 	return size;
 }
+
 static DEVICE_ATTR(mcd_mode, 0664, mcd_mode_show, mcd_mode_store);
+
 #endif
 
 #ifdef CONFIG_LCD_HMT
@@ -332,231 +334,68 @@ static DEVICE_ATTR(hmt_on, 0664, hmt_on_show, hmt_on_store);
 
 #ifdef CONFIG_LCD_ALPM
 #if defined(CONFIG_PANEL_S6E3HF3_DYNAMIC)
-static struct lcd_seq_info SEQ_ALPM_2NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-	{(u8 *)SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3), 0},
-};
-
-static struct lcd_seq_info SEQ_ALPM_40NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_ALPM_40NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_40NIT_HF3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-	{(u8 *)SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_2NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-	{(u8 *)SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_40NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_HLPM_40NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_40NIT_HF3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-	{(u8 *)SEQ_MCLK_1SET_HF3, ARRAY_SIZE(SEQ_MCLK_1SET_HF3), 0},
-};
-
-static struct lcd_seq_info SEQ_NORMAL_MODE_ON_SET[] = {
-	{(u8 *)SEQ_MCLK_3SET_HF3, ARRAY_SIZE(SEQ_MCLK_3SET_HF3), 0},
-	{(u8 *)SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON), 0},
-};
-
-// old panel 18
-static struct lcd_seq_info SEQ_ALPM_2NIT_ON_SET_OLD[] = {
-	{(u8 *)SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_ALPM_40NIT_ON_SET_OLD[] = {
-	{(u8 *)SEQ_SELECT_ALPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_ALPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_2NIT_ON_SET_OLD[] = {
-	{(u8 *)SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_40NIT_ON_SET_OLD[] = {
-	{(u8 *)SEQ_SELECT_HLPM_2NIT_HF3, ARRAY_SIZE(SEQ_SELECT_HLPM_2NIT_HF3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_NORMAL_MODE_ON_SET_OLD[] = {
-	{(u8 *)SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON), 0},
-};
-
-
 int alpm_set_mode(struct dsim_device *dsim, int enable)
 {
 	struct panel_private *priv = &(dsim->priv);
-
-	if((enable < ALPM_OFF) && (enable > HLPM_ON_40NIT)) {
+	if(priv->alpm_support != 1) {
+		pr_info("%s this panel do not support alpm %d!\n", __func__, priv->alpm_support);
+		return 0;
+	}
+	if((enable != ALPM_ON) && (enable != ALPM_OFF)) {
 		pr_info("alpm state is invalid %d !\n", priv->alpm);
 		return 0;
 	}
-
 	dsim_write_hl_data(dsim, SEQ_DISPLAY_OFF, ARRAY_SIZE(SEQ_DISPLAY_OFF));
 	usleep_range(17000, 17000);
 	dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_F0, ARRAY_SIZE(SEQ_TEST_KEY_ON_F0));
-	dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_FC, ARRAY_SIZE(SEQ_TEST_KEY_ON_FC));
-
-	if(enable == ALPM_OFF) {
-		if(priv->panel_rev >= 5)
-			alpm_write_set(dsim, SEQ_NORMAL_MODE_ON_SET, ARRAY_SIZE(SEQ_NORMAL_MODE_ON_SET));
-		else
-			alpm_write_set(dsim, SEQ_NORMAL_MODE_ON_SET_OLD, ARRAY_SIZE(SEQ_NORMAL_MODE_ON_SET_OLD));
-		if((priv->alpm_support == SUPPORT_LOWHZALPM) && (priv->current_alpm == ALPM_ON_40NIT)){
-			dsim_write_hl_data(dsim, SEQ_AOD_LOWHZ_OFF, ARRAY_SIZE(SEQ_AOD_LOWHZ_OFF));
-			dsim_write_hl_data(dsim, SEQ_AID_MOD_OFF, ARRAY_SIZE(SEQ_AID_MOD_OFF));
-			pr_info("%s : Low hz support !\n", __func__);
-		}
-	} else {
-		switch(enable) {
-		case HLPM_ON_2NIT:
-			if(priv->panel_rev >= 5)
-				alpm_write_set(dsim, SEQ_HLPM_2NIT_ON_SET, ARRAY_SIZE(SEQ_HLPM_2NIT_ON_SET));
-			else
-				alpm_write_set(dsim, SEQ_HLPM_2NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_HLPM_2NIT_ON_SET_OLD));
-			pr_info("%s : HLPM_ON_2NIT !\n", __func__);
-			break;
-		case ALPM_ON_2NIT:
-			if(priv->panel_rev >= 5)
-				alpm_write_set(dsim, SEQ_ALPM_2NIT_ON_SET, ARRAY_SIZE(SEQ_ALPM_2NIT_ON_SET));
-			else
-				alpm_write_set(dsim, SEQ_ALPM_2NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_ALPM_2NIT_ON_SET_OLD));
-			pr_info("%s : ALPM_ON_2NIT !\n", __func__);
-			break;
-		case HLPM_ON_40NIT:
-			if(priv->panel_rev >= 5)
-				alpm_write_set(dsim, SEQ_HLPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_HLPM_40NIT_ON_SET));
-			else
-				alpm_write_set(dsim, SEQ_HLPM_40NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_HLPM_40NIT_ON_SET_OLD));
-			pr_info("%s : HLPM_ON_40NIT !\n", __func__);
-			break;
-		case ALPM_ON_40NIT:
-			if(priv->alpm_support == SUPPORT_LOWHZALPM) {
-				dsim_write_hl_data(dsim, SEQ_2HZ_GPARA, ARRAY_SIZE(SEQ_2HZ_GPARA));
-				dsim_write_hl_data(dsim, SEQ_2HZ_SET, ARRAY_SIZE(SEQ_2HZ_SET));
-				dsim_write_hl_data(dsim, SEQ_AID_MOD_ON, ARRAY_SIZE(SEQ_AID_MOD_ON));
-				pr_info("%s : Low hz support !\n", __func__);
-			}
-			if(priv->panel_rev >= 5)
-				alpm_write_set(dsim, SEQ_ALPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_ALPM_40NIT_ON_SET));
-			else
-				alpm_write_set(dsim, SEQ_ALPM_40NIT_ON_SET_OLD, ARRAY_SIZE(SEQ_ALPM_40NIT_ON_SET_OLD));
-			pr_info("%s : ALPM_ON_40NIT !\n", __func__);
-			break;
-		default:
-			pr_info("%s: input is out of range : %d \n", __func__, enable);
-			break;
-		}
-		dsim_write_hl_data(dsim, HF3_A3_IRC_off, ARRAY_SIZE(HF3_A3_IRC_off));
+	if(enable == ALPM_ON) {
+		dsim_write_hl_data(dsim, SEQ_ALPM2NIT_MODE_ON, ARRAY_SIZE(SEQ_ALPM2NIT_MODE_ON));
+	} else if(enable == ALPM_OFF) {
+		dsim_write_hl_data(dsim, SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON));
 	}
-
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE, ARRAY_SIZE(SEQ_GAMMA_UPDATE));
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE_L, ARRAY_SIZE(SEQ_GAMMA_UPDATE_L));
-
-	usleep_range(17000, 17000);
-
-	dsim_write_hl_data(dsim, SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
-	read_panel_status(dsim);
-
 	dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
-	dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_FC, ARRAY_SIZE(SEQ_TEST_KEY_OFF_FC));
-
+	dsim_write_hl_data(dsim, SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON)); /* (workaround) DDI 0x0A register : DISP_ON bit not upset */
+	usleep_range(17000, 17000);
+	dsim_write_hl_data(dsim, SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
 
 	priv->current_alpm = dsim->alpm = enable;
 
 	return 0;
 }
-
-#else		// HA3
-static struct lcd_seq_info SEQ_ALPM_2NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_ALPM_HA3, ARRAY_SIZE(SEQ_SELECT_ALPM_HA3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_ALPM_40NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_ALPM_HA3, ARRAY_SIZE(SEQ_SELECT_ALPM_HA3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_2NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_HLPM_HA3, ARRAY_SIZE(SEQ_SELECT_HLPM_HA3), 0},
-	{(u8 *)SEQ_2NIT_MODE_ON, ARRAY_SIZE(SEQ_2NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_HLPM_40NIT_ON_SET[] = {
-	{(u8 *)SEQ_SELECT_HLPM_HA3, ARRAY_SIZE(SEQ_SELECT_HLPM_HA3), 0},
-	{(u8 *)SEQ_40NIT_MODE_ON, ARRAY_SIZE(SEQ_40NIT_MODE_ON), 0},
-};
-
-static struct lcd_seq_info SEQ_NORMAL_MODE_ON_SET[] = {
-	{(u8 *)SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON), 0},
-};
-
-
+#else
 int alpm_set_mode(struct dsim_device *dsim, int enable)
 {
 	struct panel_private *priv = &(dsim->priv);
-
-	if((enable < ALPM_OFF) && (enable > HLPM_ON_40NIT)) {
+	if((enable != ALPM_ON) && (enable != ALPM_OFF)) {
 		pr_info("alpm state is invalid %d !\n", priv->alpm);
 		return 0;
 	}
-
 	dsim_write_hl_data(dsim, SEQ_DISPLAY_OFF, ARRAY_SIZE(SEQ_DISPLAY_OFF));
 	usleep_range(17000, 17000);
 	dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_F0, ARRAY_SIZE(SEQ_TEST_KEY_ON_F0));
-	dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_FC, ARRAY_SIZE(SEQ_TEST_KEY_ON_FC));
-
-	if(enable == ALPM_OFF) {
-		alpm_write_set(dsim, SEQ_NORMAL_MODE_ON_SET, ARRAY_SIZE(SEQ_NORMAL_MODE_ON_SET));
-	} else {
-		switch(enable) {
-		case HLPM_ON_2NIT:
-			alpm_write_set(dsim, SEQ_HLPM_2NIT_ON_SET, ARRAY_SIZE(SEQ_HLPM_2NIT_ON_SET));
-			pr_info("%s : HLPM_ON_2NIT !\n", __func__);
-			break;
-		case ALPM_ON_2NIT:
-			alpm_write_set(dsim, SEQ_ALPM_2NIT_ON_SET, ARRAY_SIZE(SEQ_ALPM_2NIT_ON_SET));
-			pr_info("%s : ALPM_ON_2NIT !\n", __func__);
-			break;
-		case HLPM_ON_40NIT:
-			alpm_write_set(dsim, SEQ_HLPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_HLPM_40NIT_ON_SET));
-			pr_info("%s : HLPM_ON_40NIT !\n", __func__);
-			break;
-		case ALPM_ON_40NIT:
-			alpm_write_set(dsim, SEQ_ALPM_40NIT_ON_SET, ARRAY_SIZE(SEQ_ALPM_40NIT_ON_SET));
-			pr_info("%s : ALPM_ON_40NIT !\n", __func__);
-			break;
-		default:
-			pr_info("%s: input is out of range : %d \n", __func__, enable);
-			break;
-		}
-		dsim_write_hl_data(dsim, HF3_A3_IRC_off, ARRAY_SIZE(HF3_A3_IRC_off));
+	if(enable == ALPM_ON) {
+		priv->mtpForALPM[34] = priv->mtpForALPM[35]= 0;
+		dsim_write_hl_data(dsim, priv->mtpForALPM, ARRAY_SIZE(priv->mtpForALPM));
+		dsim_write_hl_data(dsim, SEQ_ALPM2NIT_MODE_ON, ARRAY_SIZE(SEQ_ALPM2NIT_MODE_ON));
+	} else if(enable == ALPM_OFF) {
+		priv->mtpForALPM[34] = priv->prev_VT[0];
+		priv->mtpForALPM[35] = priv->prev_VT[1];
+		dsim_write_hl_data(dsim, priv->mtpForALPM, ARRAY_SIZE(priv->mtpForALPM));
+		dsim_write_hl_data(dsim, SEQ_NORMAL_MODE_ON, ARRAY_SIZE(SEQ_NORMAL_MODE_ON));
 	}
-
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE, ARRAY_SIZE(SEQ_GAMMA_UPDATE));
 	dsim_write_hl_data(dsim, SEQ_GAMMA_UPDATE_L, ARRAY_SIZE(SEQ_GAMMA_UPDATE_L));
-
-	usleep_range(17000, 17000);
-
-	dsim_write_hl_data(dsim, SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
-	read_panel_status(dsim);
-
 	dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
-	dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_FC, ARRAY_SIZE(SEQ_TEST_KEY_OFF_FC));
+	usleep_range(17000, 17000);
+	dsim_write_hl_data(dsim, SEQ_DISPLAY_ON, ARRAY_SIZE(SEQ_DISPLAY_ON));
 
 	priv->current_alpm = dsim->alpm = enable;
 
 	return 0;
 }
-
 #endif
-
-
 static ssize_t alpm_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -584,11 +423,6 @@ static ssize_t alpm_store(struct device *dev,
 
 	sscanf(buf, "%9d", &value);
 	dev_info(dev, "%s: %d \n", __func__, value);
-
-	if(priv->alpm_support == UNSUPPORT_ALPM) {
-		pr_info("%s this panel does not support ALPM!\n", __func__);
-		return size;
-	}
 
 	mutex_lock(&priv->alpm_lock);
 #if defined (CONFIG_SEC_FACTORY)
@@ -652,6 +486,8 @@ static ssize_t alpm_doze_store(struct device *dev,
 
 	sscanf(buf, "%9d", &value);
 
+	dsim_err("%s: sysfs alpm value: %d", __func__, value);
+
 	decon = (struct decon_device *)dsim->decon;
 	if (decon != NULL)
 		output_lock = &decon->output_lock;
@@ -674,10 +510,10 @@ static ssize_t alpm_doze_store(struct device *dev,
 				call_panel_ops(dsim, displayon, dsim);
 			}
 			break;
-		case ALPM_ON_2NIT:
-		case HLPM_ON_2NIT:
-		case ALPM_ON_40NIT:
-		case HLPM_ON_40NIT:
+		case ALPM_ON_LOW:
+		case HLPM_ON_LOW:
+		case ALPM_ON_HIGH:
+		case HLPM_ON_HIGH:
 			priv->alpm_mode = value;
 			if ((dsim->dsim_doze == DSIM_DOZE_STATE_DOZE) ||
 				(dsim->dsim_doze == DSIM_DOZE_STATE_NORMAL)) {
@@ -697,10 +533,10 @@ static ssize_t alpm_doze_store(struct device *dev,
 	}
 #else
 	switch (value) {
-		case ALPM_ON_2NIT:
-		case HLPM_ON_2NIT:
-		case ALPM_ON_40NIT:
-		case HLPM_ON_40NIT:
+		case ALPM_ON_LOW:
+		case HLPM_ON_LOW:
+		case ALPM_ON_HIGH:
+		case HLPM_ON_HIGH:
 			if (output_lock != NULL)
 				mutex_lock(output_lock);
 

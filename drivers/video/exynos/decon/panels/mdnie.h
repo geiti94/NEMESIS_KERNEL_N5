@@ -69,15 +69,6 @@ enum NIGHT_MODE {
 	NIGHT_MODE_MAX
 };
 
-enum HDR {
-	HDR_OFF,
-	HDR_ON,
-	HDR_1 = HDR_ON,
-	HDR_2,
-	HDR_3,
-	HDR_MAX
-};
-
 struct mdnie_seq_info {
 	mdnie_t *cmd;
 	unsigned int len;
@@ -117,7 +108,6 @@ struct mdnie_tune {
 	struct mdnie_table	(*main_table)[MODE_MAX];
 	struct mdnie_table	*dmb_table;
 	struct mdnie_table	*night_table;
-	struct mdnie_table	*hdr_table;
 
 	struct mdnie_scr_info	*scr_info;
 	struct mdnie_trans_info	*trans_info;
@@ -125,7 +115,6 @@ struct mdnie_tune {
 	unsigned char **coordinate_table;
 	unsigned char **adjust_ldu_rgb_table;
 	unsigned char *night_mode_table;
-	unsigned int max_adjust_ldu;
 	int (*get_hbm_index)(int);
 	int (*color_offset[])(int, int);
 };
@@ -157,7 +146,6 @@ struct mdnie_info {
 	enum HBM		hbm;
 	enum hmt_mode		hmt_mode;
 	enum NIGHT_MODE		night_mode;
-	enum HDR		hdr;
 
 	unsigned int		tuning;
 	unsigned int		accessibility;

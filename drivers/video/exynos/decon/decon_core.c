@@ -28,7 +28,6 @@
 #include <linux/dma-buf.h>
 #include <linux/exynos_ion.h>
 #include <linux/ion.h>
-#include <linux/irq.h>
 #include <linux/highmem.h>
 #include <linux/memblock.h>
 #include <linux/exynos_iovmm.h>
@@ -37,6 +36,7 @@
 #include <linux/smc.h>
 #include <linux/debugfs.h>
 #include <linux/of_gpio.h>
+#include <linux/irq.h>
 
 #include <mach/regs-clock.h>
 #include <mach/exynos-pm.h>
@@ -1460,6 +1460,7 @@ int decon_enable(struct decon_device *decon)
 #ifdef CONFIG_LCD_DOZE_MODE
 		if (is_lcd_on) {
 			decon_info("%s :doze mode : %d\n", __func__, decon->decon_doze);
+
 			if ((decon->decon_doze == DECON_DOZE_STATE_DOZE) ||
 				(decon->decon_doze == DECON_DOZE_STATE_DOZE_SUSPEND)) {
 				ret = v4l2_subdev_call(decon->output_sd, video, s_stream, DSIM_REQ_POWER_ON);
@@ -2785,12 +2786,6 @@ static void decon_set_win_update_config(struct decon_device *decon,
 			memset(update_config, 0, sizeof(struct decon_win_config));
 	}
 #endif
-#ifdef CONFIG_LCD_DOZE_MODE
-	if ((decon->pdata->out_type == DECON_OUT_DSI) &&
-		(decon->decon_doze == DECON_DOZE_STATE_DOZE)) {
-		memset(update_config, 0, sizeof(struct decon_win_config));
-	}
-#endif
 
 	if (decon->out_type == DECON_OUT_DSI) {
 		if (decon->force_fullupdate)
@@ -3804,7 +3799,7 @@ static void decon_update_regs(struct decon_device *decon, struct decon_reg_data 
 	        decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
 		decon->tracing_mark_write( decon->systrace_pid, 'E', "decon_update_regs", 0 );
 	        DISP_SS_EVENT_LOG(DISP_EVT_TE_WAIT_DONE, &decon->sd, ktime_set(0, 0));
-	        if (decon_reg_wait_for_update_timeout(decon->id, 300 * 1000) < 0) {
+	        if (decon_reg_wait_for_update_timeout< 0) {
 		        decon_dump(decon);
 		        vpp_dump(decon);
 		        BUG();
@@ -4272,15 +4267,6 @@ int decon_doze_enable(struct decon_device *decon)
 	}
 #endif
 
-#ifdef CONFIG_FB_WINDOW_UPDATE
-	if ((decon->pdata->out_type == DECON_OUT_DSI) && (decon->need_update)) {
-		decon->need_update = false;
-		decon->update_win.x = 0;
-		decon->update_win.y = 0;
-		decon->update_win.w = decon->lcd_info->xres;
-		decon->update_win.h = decon->lcd_info->yres;
-	}
-#endif
 	if (decon->id == 0)
 		decon_esd_enable_interrupt(decon);
 
@@ -4567,7 +4553,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 				}
 				ret = decon_doze_suspend(decon);
 				if (ret) {
-					decon_err("ERR:%s:failed to decon_doze_enable():%d\n", __func__, ret);
+					decon_err("ERR:%s:failed to decon_doze_suspend():%d\n", __func__, ret);
 					if (decon->vsync_backup == true) {
 						decon->ignore_vsync = false;
 						decon->vsync_backup = false;

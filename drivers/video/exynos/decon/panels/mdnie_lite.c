@@ -21,15 +21,14 @@
 
 #define MDNIE_SYSFS_PREFIX		"/sdcard/mdnie/"
 
-#define IS_DMB(idx)			(idx == DMB_NORMAL_MODE)
+#define IS_DMB(idx)				(idx == DMB_NORMAL_MODE)
 #define IS_SCENARIO(idx)		(idx < SCENARIO_MAX && !(idx > VIDEO_NORMAL_MODE && idx < CAMERA_MODE))
-#define IS_ACCESSIBILITY(idx)		(idx && idx < ACCESSIBILITY_MAX)
-#define IS_HBM(idx)			(idx)
-#define IS_HMT(idx)			(idx && idx < HMT_MDNIE_MAX)
+#define IS_ACCESSIBILITY(idx)	(idx && idx < ACCESSIBILITY_MAX)
+#define IS_HBM(idx)				(idx)
+#define IS_HMT(idx)				(idx && idx < HMT_MDNIE_MAX)
 
-#define SCENARIO_IS_VALID(idx)		(IS_DMB(idx) || IS_SCENARIO(idx))
+#define SCENARIO_IS_VALID(idx)	(IS_DMB(idx) || IS_SCENARIO(idx))
 #define IS_NIGHT_MODE(idx)		(idx == NIGHT_MODE_ON)
-#define IS_HDR(idx)			(idx >= HDR_ON && idx < HDR_MAX)
 
 /* Split 16 bit as 8bit x 2 */
 #define GET_MSB_8BIT(x)		((x >> 8) & (BIT(8) - 1))

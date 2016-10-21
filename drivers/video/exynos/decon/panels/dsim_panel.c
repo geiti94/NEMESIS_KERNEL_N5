@@ -47,7 +47,7 @@ static int mdnie_lite_write_set(struct dsim_device *dsim, struct lcd_seq_info *s
 			}
 		}
 		if (seq[i].sleep)
-			usleep_range(seq[i].sleep * 1000 , seq[i].sleep * 1000);
+			usleep_range(seq[i].sleep * 1000, seq[i].sleep * 1000);
 	}
 	return ret;
 }
@@ -57,11 +57,6 @@ int mdnie_lite_send_seq(struct dsim_device *dsim, struct lcd_seq_info *seq, u32 
 	int ret = 0;
 	struct panel_private *panel = &dsim->priv;
 
-	if (panel->lcdConnected == PANEL_DISCONNEDTED) {
-		dsim_err("%s : %d : panel was not connected\n", __func__, dsim->id);
-		return ret;
-	}
-
 	if (panel->state != PANEL_STATE_RESUMED) {
 		dsim_info("%s : panel is not active\n", __func__);
 		return -EIO;
@@ -69,7 +64,6 @@ int mdnie_lite_send_seq(struct dsim_device *dsim, struct lcd_seq_info *seq, u32 
 
 	mutex_lock(&panel->lock);
 	ret = mdnie_lite_write_set(dsim, seq, num);
-
 	mutex_unlock(&panel->lock);
 
 	return ret;
@@ -80,18 +74,13 @@ int mdnie_lite_read(struct dsim_device *dsim, u8 addr, u8 *buf, u32 size)
 	int ret = 0;
 	struct panel_private *panel = &dsim->priv;
 
-	if (panel->lcdConnected == PANEL_DISCONNEDTED) {
-		dsim_err("%s : %d : panel was not connected\n", __func__, dsim->id);
-		return -EIO;
-	}
-
 	if (panel->state != PANEL_STATE_RESUMED) {
 		dsim_info("%s : panel is not active\n", __func__);
 		return -EIO;
 	}
+
 	mutex_lock(&panel->lock);
 	ret = dsim_read_hl_data(dsim, addr, size, buf);
-
 	mutex_unlock(&panel->lock);
 
 	return ret;
@@ -138,15 +127,16 @@ static int dsim_panel_probe(struct dsim_device *dsim)
 	panel->siop_enable = 0;
 	panel->current_hbm = 0;
 	panel->current_vint = 0;
-	panel->adaptive_control = ACL_OPR_MAX - 1;
+	panel->adaptive_control = ACL_STATUS_ON;
 	panel->lux = -1;
-	panel->id[0] = panel->id[1] = panel->id[2] = 0xff;
-	dsim->glide_display_size = 0;
 
-	mutex_init(&panel->lock);
 #ifdef CONFIG_EXYNOS_DECON_LCD_MCD
 	panel->mcd_on = 0;
 #endif
+
+	dsim->glide_display_size = 0;
+
+	mutex_init(&panel->lock);
 
 	if (panel->ops->probe) {
 		ret = panel->ops->probe(dsim);
@@ -174,11 +164,6 @@ static int dsim_panel_displayon(struct dsim_device *dsim)
 {
 	int ret = 0;
 	struct panel_private *panel = &dsim->priv;
-
-	if (panel->lcdConnected == PANEL_DISCONNEDTED) {
-		dsim_err("%s : %d : panel was not connected\n", __func__, dsim->id);
-		return ret;
-	}
 
 #ifdef CONFIG_LCD_ALPM
 	mutex_lock(&panel->alpm_lock);
@@ -220,11 +205,6 @@ static int dsim_panel_suspend(struct dsim_device *dsim)
 	int ret = 0;
 	struct panel_private *panel = &dsim->priv;
 
-	if (panel->lcdConnected == PANEL_DISCONNEDTED) {
-			dsim_err("%s : %d : panel was not connected\n", __func__, dsim->id);
-			return ret;
-	}
-
 	if (panel->state == PANEL_STATE_SUSPENED)
 		goto suspend_err;
 
@@ -246,19 +226,6 @@ suspend_err:
 static int dsim_panel_resume(struct dsim_device *dsim)
 {
 	int ret = 0;
-	struct panel_private *panel = &dsim->priv;
-
-	if (panel->state == PANEL_STATE_SUSPENED) {
-		if (panel->ops->init) {
-			ret = panel->ops->init(dsim);
-			if (ret) {
-				dsim_err("%s : failed to panel init\n", __func__);
-				//goto displayon_err;
-			}
-		}
-		panel->state = PANEL_STATE_RESUMED;
-	}
-
 	return ret;
 }
 
@@ -269,11 +236,6 @@ static int dsim_panel_dump(struct dsim_device *dsim)
 	struct panel_private *panel = &dsim->priv;
 
 	dsim_info("%s was called\n", __func__);
-
-	if (panel->lcdConnected == PANEL_DISCONNEDTED) {
-		dsim_err("%s : %d : panel was not connected\n", __func__, dsim->id);
-		return ret;
-	}
 
 	if (panel->ops->dump)
 		ret = panel->ops->dump(dsim);
@@ -348,7 +310,7 @@ static int dsim_panel_exitalpm(struct dsim_device *dsim)
 		panel->state = PANEL_STATE_RESUMED;
 	}
 
-	if (panel->ops->enteralpm) {
+	if (panel->ops->exitalpm) {
 		ret = panel->ops->exitalpm(dsim);
 		if (ret) {
 			dsim_err("ERR:%s:failed to exit alpm \n", __func__);
@@ -357,30 +319,6 @@ static int dsim_panel_exitalpm(struct dsim_device *dsim)
 	}
 
 	panel->curr_alpm_mode = ALPM_OFF;
-	return ret;
-}
-#endif
-
-#ifdef CONFIG_FB_DSU
-static int dsim_panel_dsu_cmd(struct dsim_device *dsim)
-{
-	int ret = 0;
-	struct panel_private *panel = &dsim->priv;
-
-	dsim_info("%s was called\n", __func__);
-	if (panel->ops->dsu_cmd)
-		ret = panel->ops->dsu_cmd(dsim);
-	return ret;
-}
-
-static int dsim_panel_init(struct dsim_device *dsim)
-{
-	int ret = 0;
-	struct panel_private *panel = &dsim->priv;
-
-	dsim_info("%s was called (DSU)\n", __func__);
-	if (panel->ops->dsu_cmd)
-		ret = panel->ops->init(dsim);
 	return ret;
 }
 #endif
@@ -396,10 +334,7 @@ static struct mipi_dsim_lcd_driver mipi_lcd_driver = {
 	.enteralpm = dsim_panel_enteralpm,
 	.exitalpm = dsim_panel_exitalpm,
 #endif
-#ifdef CONFIG_FB_DSU
-	.dsu_cmd = dsim_panel_dsu_cmd,
-	.init = dsim_panel_init,
-#endif
+
 };
 
 

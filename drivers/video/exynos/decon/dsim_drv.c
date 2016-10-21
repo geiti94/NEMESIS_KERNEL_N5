@@ -65,6 +65,10 @@ static int dsim_set_ulps_by_ddi(struct dsim_device *dsim, u32 en);
 #define MIPI_WR_TIMEOUT msecs_to_jiffies(50)
 #define MIPI_RD_TIMEOUT msecs_to_jiffies(50)
 
+#ifdef CONFIG_LCD_ALPM
+#define ALPM_TIMEOUT 3
+#endif
+
 #ifdef CONFIG_OF
 static const struct of_device_id exynos5_dsim[] = {
 	{ .compatible = "samsung,exynos5-dsim" },
@@ -1142,15 +1146,11 @@ static int dsim_set_panel_power(struct dsim_device *dsim, bool on)
 static int dsim_enable(struct dsim_device *dsim)
 {
 	pr_info("%s ++\n", __func__);
+
 	if (dsim->state == DSIM_STATE_HSCLKEN) {
 #ifdef CONFIG_LCD_DOZE_MODE
 		if ((dsim->dsim_doze == DSIM_DOZE_STATE_DOZE) ||
 			(dsim->dsim_doze == DSIM_DOZE_STATE_DOZE_SUSPEND)) {
-#ifdef CONFIG_VDDR_1p5V_ALPM
-			if( regulator_set_voltage(dsim->res.regulator_16V, 1600000, 1600000) == 0 )
-				dsim_info( "%s : vddr to 1.6v successed\n", __func__ );
-			else dsim_err( "%s : vddr to 1.6v failed\n", __func__ );
-#endif
 			call_panel_ops(dsim, exitalpm, dsim);
 		}
 #endif
@@ -1163,16 +1163,8 @@ static int dsim_enable(struct dsim_device *dsim)
 	dsim_runtime_resume(dsim->dev);
 #endif
 
-#ifdef CONFIG_LCD_DOZE_MODE
-	if ((dsim->dsim_doze == DSIM_DOZE_STATE_DOZE) ||
-		(dsim->dsim_doze == DSIM_DOZE_STATE_DOZE_SUSPEND)) {
-		dsim_info("%s : exit doze\n", __func__);
-	} else {
-		dsim_set_panel_power(dsim, 1);
-	}
-#else
 	dsim_set_panel_power(dsim, 1);
-#endif
+
 	call_panel_ops(dsim, resume, dsim);
 
 	/* DPHY power on */
@@ -1187,6 +1179,11 @@ static int dsim_enable(struct dsim_device *dsim)
 			DSIM_LANE_CLOCK | dsim->data_lane);
 
 	dsim_reg_set_lanes(dsim->id, DSIM_LANE_CLOCK | dsim->data_lane, 1);
+
+#ifdef CONFIG_LCD_ALPM
+	if(dsim->alpm)
+		dsim_set_ulps_by_ddi(dsim, 0);
+#endif
 
 #ifdef CONFIG_LCD_DOZE_MODE
 	if ((dsim->dsim_doze == DSIM_DOZE_STATE_DOZE) ||
@@ -1208,11 +1205,6 @@ static int dsim_enable(struct dsim_device *dsim)
 #ifdef CONFIG_LCD_DOZE_MODE
 	if ((dsim->dsim_doze == DSIM_DOZE_STATE_DOZE) ||
 		(dsim->dsim_doze == DSIM_DOZE_STATE_DOZE_SUSPEND)) {
-#ifdef CONFIG_VDDR_1p5V_ALPM
-		if( regulator_set_voltage(dsim->res.regulator_16V, 1600000, 1600000) == 0 )
-			dsim_info( "%s : vddr to 1.6v successed\n", __func__ );
-		else dsim_err( "%s : vddr to 1.6v failed\n", __func__ );
-#endif
 		call_panel_ops(dsim, exitalpm, dsim);
 	} else {
 		call_panel_ops(dsim, displayon, dsim);
@@ -1227,6 +1219,7 @@ exit_dsim_enable:
 	dsim->dsim_doze = DSIM_DOZE_STATE_NORMAL;
 	dsim->priv.curr_alpm_mode = 0;
 #endif
+
 	pr_info("%s --\n", __func__);
 
 	return 0;
@@ -1261,6 +1254,11 @@ static int dsim_disable(struct dsim_device *dsim)
 
 	/* disable HS clock */
 	dsim_reg_set_hs_clock(dsim->id, &dsim->lcd_info, 0);
+
+#ifdef CONFIG_LCD_ALPM
+	if(dsim->alpm)
+		dsim_set_ulps_by_ddi(dsim, 1);
+#endif
 
 	/* make CLK/DATA Lane as LP00 */
 	dsim_reg_set_lanes(dsim->id, DSIM_LANE_CLOCK | dsim->data_lane, 0);
@@ -1315,11 +1313,6 @@ static int dsim_doze_enable(struct dsim_device *dsim)
 #endif
 
 	if (dsim->dsim_doze == DSIM_DOZE_STATE_SUSPEND) {
-#ifdef CONFIG_VDDR_1p5V_ALPM
-		if( regulator_set_voltage(dsim->res.regulator_16V, 1500000, 1500000) == 0 )
-			dsim_info( "%s : vddr to 1.5v successed\n", __func__ );
-		else dsim_err( "%s : vddr to 1.5v failed\n", __func__ );
-#endif
 		dsim_set_panel_power(dsim, 1);
 	}
 
@@ -1361,21 +1354,22 @@ static int dsim_doze_enable(struct dsim_device *dsim)
 	if (dsim->dsim_doze == DSIM_DOZE_STATE_DOZE_SUSPEND) {
 		if (panel->curr_alpm_mode != panel->alpm_mode) {
 			call_panel_ops(dsim, enteralpm, dsim);
-			call_panel_ops(dsim, displayon, dsim);
 		}
 	}
 set_state_doze:
 	dsim->dsim_doze = DSIM_DOZE_STATE_DOZE;
 
-	call_panel_ops(dsim, displayon, dsim);
 
 	dsim_info("-- %s\n", __func__);
+
 	return 0;
 }
 
 static int dsim_doze_suspend(struct dsim_device *dsim)
 {
+
 	struct panel_private *panel = &dsim->priv;
+
 	dsim_info("++ %s\n", __func__);
 
 	if (panel->alpm_support == 0) {
@@ -1431,7 +1425,6 @@ exit_doze_disable:
 	dsim_info("-- %s\n", __func__);
 	return 0;
 }
-
 #endif
 
 static int dsim_set_ulps_by_ddi(struct dsim_device *dsim, u32 en)
@@ -1606,7 +1599,6 @@ static int dsim_s_stream(struct v4l2_subdev *sd, int enable)
 			break;
 #endif
 	}
-
 	return ret;
 }
 
@@ -2038,6 +2030,7 @@ dsim_init_done:
 #ifdef CONFIG_LCD_DOZE_MODE
 	dsim->dsim_doze = DSIM_DOZE_STATE_NORMAL;
 #endif
+
 	call_panel_ops(dsim, probe, dsim);
 	/* TODO: displayon is moved to decon probe only in case of lcd on probe */
 	/* dsim->panel_ops->displayon(dsim); */

@@ -20,6 +20,5 @@ int dsim_panel_set_brightness(struct dsim_device *dsim, int force);
 int dsim_panel_set_brightness_for_hmt(struct dsim_device *dsim, int force);
 int get_acutal_br_index(struct dsim_device *dsim, int br);
 unsigned int get_actual_br_value(struct dsim_device *dsim, int index);
-
 #endif
 
