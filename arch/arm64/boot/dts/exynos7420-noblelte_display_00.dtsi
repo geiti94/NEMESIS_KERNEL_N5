@@ -24,6 +24,7 @@
 		};
 	};
 
+	dsim_0: dsim@0x13900000 {
 		gpios = <&gpr1 0 0x1>;
 		regulator_30V = "VDD_1P6_DDR";
 		regulator_18V = "VCC_DISPLAY_1.8V";
