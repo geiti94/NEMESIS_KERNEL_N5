@@ -366,6 +366,7 @@
 
 		PIN_SLP(gpr0-3, INPUT, DOWN);	/* NC */
 
+		PIN_SLP(gpr1-0, INPUT, DOWN);	/* M_DISPLAY_RST */
 		PIN_SLP(gpr1-1, PREV, NONE);    /* OTG_EN */
 		PIN_SLP(gpr1-2, INPUT, DOWN);	/* NC */
 		PIN_SLP(gpr1-3, INPUT, DOWN);	/* NC */
@@ -380,7 +381,7 @@
 		PIN_SLP(gpr2-3, INPUT, DOWN);	/* NC */
 		PIN_SLP(gpr2-4, INPUT, DOWN);	/* NC */
 
-		PIN_SLP(gpr3-0, OUT0, DOWN);	/* M_DISPLAY_RST */
+		PIN_SLP(gpr3-0, OUT0, DOWN);	/* NC */
 		PIN_SLP(gpr3-1, INPUT, DOWN);	/* DISPLAY_DET */
 		PIN_SLP(gpr3-2, INPUT, DOWN);	/* NC */
 		PIN_SLP(gpr3-3, INPUT, NONE);	/* DUAL_SIM */
