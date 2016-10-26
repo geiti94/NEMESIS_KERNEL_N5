@@ -135,7 +135,7 @@ static inline unsigned int rkp_is_valid_cred_sp(u64 cred,u64 sp)
 		}
 		return 0;
 }
-inline void rkp_print_debug(void)
+static inline void rkp_print_debug(void)
 {
 	u64 pgd;
 	struct cred *cred;

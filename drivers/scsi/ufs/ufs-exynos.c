@@ -8,7 +8,6 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  */
-
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
@@ -544,11 +543,11 @@ static void exynos_ufs_get_debug_info(struct ufs_hba *hba)
 
 	if (!(ufs->misc_flags & EXYNOS_UFS_MISC_TOGGLE_LOG))
 		return;
- 
+
 	exynos_ufs_get_sfr(hba);
 	exynos_ufs_get_attr(hba);
 	exynos_ufs_get_misc(hba);
- 
+
 	ufs->misc_flags &= ~(EXYNOS_UFS_MISC_TOGGLE_LOG);
 }
 
@@ -561,7 +560,7 @@ struct exynos_ufs_soc *exynos_ufs_get_drv_data(struct device *dev)
 	return ((struct ufs_hba_variant *)match->data)->vs_data;
 }
 
-inline void exynos_ufs_ctrl_hci_core_clk(struct exynos_ufs *ufs, bool en)
+void exynos_ufs_ctrl_hci_core_clk(struct exynos_ufs *ufs, bool en)
 {
 	u32 reg;
 
@@ -1507,7 +1506,7 @@ static void exynos_ufs_post_hibern8(struct ufs_hba *hba, u8 enter)
 	}
 }
 
-static int exynos_ufs_link_startup_notify(struct ufs_hba *hba, bool notify)
+static int exynos_ufs_link_startup_notify(struct ufs_hba *hba, int notify)
 {
 	int ret = 0;
 
@@ -1526,7 +1525,7 @@ static int exynos_ufs_link_startup_notify(struct ufs_hba *hba, bool notify)
 	return ret;
 }
 
-static int exynos_ufs_pwr_change_notify(struct ufs_hba *hba, bool notify,
+static int exynos_ufs_pwr_change_notify(struct ufs_hba *hba, int notify,
 					struct ufs_pa_layer_attr *pwr_max,
 					struct ufs_pa_layer_attr *pwr_req)
 {
@@ -1547,7 +1546,7 @@ static int exynos_ufs_pwr_change_notify(struct ufs_hba *hba, bool notify,
 }
 
 static void exynos_ufs_hibern8_notify(struct ufs_hba *hba,
-				u8 enter, bool notify)
+				u8 enter, int notify)
 {
 	switch (notify) {
 	case PRE_CHANGE:

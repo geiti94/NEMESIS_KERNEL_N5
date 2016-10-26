@@ -44,7 +44,7 @@ MODULE_PARM_DESC(debug, "Debug level - higher value produces more verbose messag
 /* Helper functions for interrupt processing */
 
 /* Remove from hw execution round robin */
-void clear_work_bit(struct s5p_mfc_ctx *ctx)
+static void clear_work_bit(struct s5p_mfc_ctx *ctx)
 {
 	struct s5p_mfc_dev *dev = ctx->dev;
 

@@ -600,7 +600,7 @@ static int c_show(struct seq_file *m, void *v)
 		}
 #endif
 		seq_printf(m, "CPU implementer\t: 0x%02x\n", (midr >> 24));
-		seq_printf(m, "CPU architecture: %s\n"
+		seq_printf(m, "CPU architecture: %s\n",
 #if IS_ENABLED(CONFIG_ARMV7_COMPAT_CPUINFO)
 			   is_compat_task() ? "8" :
 #endif
