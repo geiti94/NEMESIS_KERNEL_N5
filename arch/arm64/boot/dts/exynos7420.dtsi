@@ -36,7 +36,6 @@
 		pinctrl8 = &pinctrl_8;
 		pinctrl9 = &pinctrl_9;
 		mshc0 = &dwmmc_0;
-		mshc1 = &dwmmc_1;
 		mshc2 = &dwmmc_2;
 		mdev0 = &mdev_0;
 		vpp0 = &vg_0;
@@ -53,7 +52,7 @@
 		uart4 = &serial_4;
 		hsi2c0 = &hsi2c_0;
 		hsi2c1 = &hsi2c_1;
-                hsi2c2 = &hsi2c_2;
+		hsi2c2 = &hsi2c_2;
 		hsi2c3 = &hsi2c_3;
 		hsi2c4 = &hsi2c_4;
 		hsi2c5 = &hsi2c_5;
@@ -992,17 +991,6 @@
 		clock-names = "biu", "dout_mmc_a", "gate_ciu";
 		status = "disabled";
 	};
-
-	dwmmc_1: dwmmc1@15750000 {
-		compatible = "samsung,exynos7420-dw-mshc";
-		reg = <0x15750000 0x2000>;
-		interrupts = <0 202 0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		clocks = <&clock 180>, <&clock 187>, <&clock 186>;
-		clock-names = "biu", "dout_mmc_a", "gate_ciu";
-		status = "disabled";
-	 };
 
 	dwmmc_2: dwmmc2@15560000 {
 		compatible = "samsung,exynos7420-dw-mshc";
