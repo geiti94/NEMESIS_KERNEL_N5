@@ -55,7 +55,6 @@
 #define SE_SBINITIALIZED	0x10
 #define SE_SBPROC		0x20
 #define SE_SBLABELSUPP	0x40
-#define SE_SBGENFS	0x80
 
 #define CONTEXT_STR	"context="
 #define FSCONTEXT_STR	"fscontext="
@@ -132,7 +131,7 @@ struct operation {
 
 /* definitions of av_decision.flags */
 // START_SEC_SELINUX_PORTING_COMMON
-#ifdef CONFIG_ALWAYS_ENFORCE
+#ifdef CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE
 #define AVD_FLAGS_PERMISSIVE	0x0000
 #else
 #define AVD_FLAGS_PERMISSIVE	0x0001
