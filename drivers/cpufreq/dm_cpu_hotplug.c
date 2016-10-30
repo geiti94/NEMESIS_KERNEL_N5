@@ -53,6 +53,8 @@ static DEFINE_MUTEX(cluster0_hotplug_in_lock);
 static DEFINE_MUTEX(thread_manage_lock);
 #endif
 
+bool screen_on = true;
+
 static struct task_struct *dm_hotplug_task;
 #ifdef CONFIG_HOTPLUG_THREAD_STOP
 static bool thread_start = false;
@@ -456,6 +458,7 @@ static int fb_state_change(struct notifier_block *nb,
 	case FB_BLANK_POWERDOWN:
 		lcd_is_on = false;
 		pr_info("LCD is off\n");
+		screen_on = false;
 
 #ifdef CONFIG_HOTPLUG_THREAD_STOP
 		if (thread_manage_wq) {
@@ -474,6 +477,7 @@ static int fb_state_change(struct notifier_block *nb,
 		 */
 		lcd_is_on = true;
 		pr_info("LCD is on\n");
+		screen_on = true;
 
 #ifdef CONFIG_HOTPLUG_THREAD_STOP
 		if (thread_manage_wq) {
