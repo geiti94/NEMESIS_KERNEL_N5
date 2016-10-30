@@ -195,19 +195,7 @@ void kbase_destroy_context(struct kbase_context *kctx)
 	KBASE_DEBUG_ASSERT(NULL != kbdev);
 
 	/* MALI_SEC_INTEGRATION */
-<<<<<<< HEAD
-	for (profile_count = 0; profile_count < 3; profile_count++) {
-		if (wait_event_timeout(kctx->mem_profile_wait, atomic_read(&kctx->mem_profile_showing_state) == 0, (unsigned int) msecs_to_jiffies(1000)))
-			break;
-		else
-			printk("[G3D] waiting for memory profile\n");
-	}
-
-	/* MALI_SEC_INTEGRATION */
-	while (wait_event_freezable_timeout(kbdev->pm.suspending_wait, kbdev->pm.suspending == false, (unsigned int) msecs_to_jiffies(1000)) == 0)
-=======
 	while (wait_event_timeout(kbdev->pm.suspending_wait, kbdev->pm.suspending == false, (unsigned int) msecs_to_jiffies(1000)) == 0)
->>>>>>> a693b9d... gpu: update mali r7p0 from S7 g935f
 		printk("[G3D] Waiting for resuming the device\n");
 
 	KBASE_TRACE_ADD(kbdev, CORE_CTX_DESTROY, kctx, NULL, 0u, 0u);
