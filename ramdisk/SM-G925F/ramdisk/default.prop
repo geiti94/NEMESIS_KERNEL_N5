@@ -1,0 +1,35 @@
+#
+# ADDITIONAL_DEFAULT_PROPERTIES
+#
+telephony.lteOnCdmaDevice=0
+rild.libpath=/system/lib64/libsec-ril.so
+ro.secure=0
+ro.allow.mock.location=0
+ro.debuggable=1
+ro.adb.secure=0
+persist.sys.usb.config=mtp,adb
+ro.zygote=zygote64_32
+dalvik.vm.image-dex2oat-Xms=64m
+dalvik.vm.image-dex2oat-Xmx=64m
+dalvik.vm.dex2oat-Xms=64m
+dalvik.vm.dex2oat-Xmx=512m
+ro.dalvik.vm.native.bridge=0
+debug.atrace.tags.enableflags=0
+#
+# BOOTIMAGE_BUILD_PROPERTIES
+#
+ro.bootimage.build.date=Wed Jul 6 17:09:40 KST 2016
+ro.bootimage.build.date.utc=1467792580
+ro.bootimage.build.fingerprint=samsung/zeroltexx/zerolte:6.0.1/MMB29K/G925FXXS4DPG7:user/test-keys
+# SELinux & Knox related
+persist.cne.feature=0
+persist.security.ams.enforcing=0
+androidboot.selinux=0
+ro.config.tima=0
+ro.securestorage.support=false
+ro.securestorage.knox=false
+ro.security.mdpp.ux=Disabled
+ro.config.knox=0
+
+# Screen mirroring / AllShare Cast fix
+wlan.wfd.hdcp=disable

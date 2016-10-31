@@ -73,6 +73,19 @@ struct lcd_seq_info {
 #define S6E3HF2_REG_MIC_ADDR 	0xF9
 #define S6E3HF2_REG_MIC_LEN	1
 
+#ifdef CONFIG_LCD_DOZE_MODE
+#define	ALPM_OFF			0
+#define ALPM_ON_LOW			1
+#define HLPM_ON_LOW			2
+#define ALPM_ON_HIGH			3
+#define HLPM_ON_HIGH			4
+#endif
+
+#if defined(CONFIG_LCD_ALPM) || defined(CONFIG_LCD_DOZE_MODE)
+#define UNSUPPORT_ALPM					0
+#define SUPPORT_30HZALPM				1
+#define SUPPORT_LOWHZALPM				2
+#endif
 
 static const unsigned int VINT_DIM_TABLE[] = {
 	5,	6,	7,	8,	9,
@@ -112,6 +125,66 @@ static const unsigned char SEQ_TEST_KEY_ON_FC[] = {
 static const unsigned char SEQ_TEST_KEY_OFF_FC[] = {
 	0xFC,
 	0xA5, 0xA5
+};
+
+static const unsigned char SEQ_SELECT_HLPM_60[] = {
+	0xBB,
+	0x54, 0x00, 0x07, 0x2A, 0x69
+};
+
+static const unsigned char SEQ_SELECT_HLPM_2[] = {
+	0xBB,
+	0x54
+};
+
+static const unsigned char SEQ_SELECT_ALPM_60[] = {
+	0xBB,
+	0x84
+};
+
+static const unsigned char SEQ_SELECT_ALPM_2[] = {
+	0xBB,
+	0xC4
+};
+
+static const unsigned char SEQ_ALPM_ON_60[] = {
+	0x53,
+	0x02
+};
+
+static const unsigned char SEQ_ALPM_ON_2[] = {
+	0x53,
+	0x03
+};
+
+static const unsigned char SEQ_ALPM_OFF[] = {
+	0x53,
+	0x00
+};
+
+static const unsigned char SEQ_SRC_LOAD_EN_HLPM[] = {
+	0xFD,
+	0xA1, 0x20, 0x08, 0x04, 0x44, 0x00,
+	0x8C
+};
+
+static const unsigned char SEQ_SRC_LOAD_EN_ALPM[] = {
+	0xFD,
+	0xA1, 0x20, 0x08, 0x04, 0x44, 0x00,
+	0x0C
+};
+
+static const unsigned char SEQ_PARTIAL_MODE_ON[] = {
+	0x12
+};
+
+static const unsigned char SEQ_NORMAL_MODE_ON[] = {
+	0x53, 0x00
+};
+
+static const unsigned char SEQ_PARTIAL_AREA_SETTING[] = {
+	0x30,
+	0x07, 0x7E, 0x07, 0x7F
 };
 
 static const unsigned char SEQ_SLEEP_OUT[] = {
@@ -397,22 +470,6 @@ static const unsigned char SEQ_HMT_AID_REVERSE2[] = {	/* G.Param */
 
 
 #endif
-
-#ifdef CONFIG_LCD_ALPM
-static const unsigned char SEQ_ALPM2NIT_MODE_ON[] = {
-	0x53, 0x23
-};
-
-static const unsigned char SEQ_NORMAL_MODE_ON[] = {
-	0x53, 0x00
-};
-
-static const unsigned char SEQ_GLOBAL_PARAM_21[] = {
-	0xB0,
-	0x15
-};
-#endif
-
 
 enum {
 	HBM_INTER_OFF = 0,
