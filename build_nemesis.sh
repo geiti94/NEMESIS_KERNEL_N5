@@ -23,6 +23,7 @@ else if [ $MODEL = zeroflte ]
 then
 	KERNEL_DEFCONFIG=exynos7420-zeroflte_defconfig
 else if [ $MODEL = zerolte ]
+then
 	KERNEL_DEFCONFIG=exynos7420-zerolte_defconfig
 else [ $MODEL = zenlte ]
 	KERNEL_DEFCONFIG=exynos7420-zenlte_defconfig
@@ -154,7 +155,6 @@ FUNC_BUILD_RAMDISK()
 		./repackimg.sh
 		echo SEANDROIDENFORCE >> image-new.img
 		;;
-	*)
 	zenlte)
 		rm -f $RDIR/ramdisk/SM-G928F/split_img/boot.img-zImage
 		rm -f $RDIR/ramdisk/SM-G928F/split_img/boot.img-dtb
