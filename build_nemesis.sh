@@ -3,7 +3,7 @@
 
 export MODEL=noblelte
 export ARCH=arm64
-export BUILD_CROSS_COMPILE=../Toolchain/aarch64-sabermod-7.0/bin/aarch64-
+export BUILD_CROSS_COMPILE=/home/geiti94/android/toolchain/aarch64-sabermod-7.0/bin/aarch64-
 export BUILD_JOB_NUMBER=`grep processor /proc/cpuinfo|wc -l`
 
 RDIR=$(pwd)
