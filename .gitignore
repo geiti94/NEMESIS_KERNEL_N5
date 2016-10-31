@@ -65,7 +65,8 @@ build.log
 include/config
 include/generated
 scripts/rkp_cfp/tmp
-arch/arm64/boot/dtb/
+arch/arm64/boot/dtb/*.dts
+arch/arm64/boot/dtb/*.dtb
 arch/*/include/generated
 
 # stgit generated dirs
