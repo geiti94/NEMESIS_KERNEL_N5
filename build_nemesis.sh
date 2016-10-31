@@ -22,8 +22,11 @@ then
 else if [ $MODEL = zeroflte ]
 then
 	KERNEL_DEFCONFIG=exynos7420-zeroflte_defconfig
-else [ $MODEL = zerolte ]
+else if [ $MODEL = zerolte ]
 	KERNEL_DEFCONFIG=exynos7420-zerolte_defconfig
+else [ $MODEL = zenlte ]
+	KERNEL_DEFCONFIG=exynos7420-zenlte_defconfig
+fi
 fi
 fi
 
@@ -55,6 +58,9 @@ FUNC_BUILD_DTIMAGE_TARGET()
 		DTSFILES=""
 		;;
 	zerolte)
+		DTSFILES=""
+		;;
+	zenlte)
 		DTSFILES=""
 		;;
 	*)
@@ -145,6 +151,16 @@ FUNC_BUILD_RAMDISK()
 		mv -f $RDIR/arch/$ARCH/boot/boot.img-zImage $RDIR/ramdisk/SM-G925F/split_img/boot.img-zImage
 		mv -f $RDIR/arch/$ARCH/boot/boot.img-dtb $RDIR/ramdisk/SM-G925F/split_img/boot.img-dtb
 		cd $RDIR/ramdisk/SM-G925F
+		./repackimg.sh
+		echo SEANDROIDENFORCE >> image-new.img
+		;;
+	*)
+	zenlte)
+		rm -f $RDIR/ramdisk/SM-G928F/split_img/boot.img-zImage
+		rm -f $RDIR/ramdisk/SM-G928F/split_img/boot.img-dtb
+		mv -f $RDIR/arch/$ARCH/boot/boot.img-zImage $RDIR/ramdisk/SM-G928F/split_img/boot.img-zImage
+		mv -f $RDIR/arch/$ARCH/boot/boot.img-dtb $RDIR/ramdisk/SM-G928F/split_img/boot.img-dtb
+		cd $RDIR/ramdisk/SM-G928F
 		./repackimg.sh
 		echo SEANDROIDENFORCE >> image-new.img
 		;;
