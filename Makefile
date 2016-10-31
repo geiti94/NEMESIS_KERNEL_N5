@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 ARCH		= arm64
-CROSS_COMPILE	=/home/geiti94/android/toolchain/aarch64-ubertc-4.9/bin/aarch64-linux-android-
+CROSS_COMPILE	=/home/geiti94/android/toolchain/aarch64-sabermod-7.0/bin/aarch64-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -386,6 +386,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -fno-diagnostics-show-caret -fno-pic \
 		   -Wno-unused-variable \
+		   -mtune=cortex-a57.cortex-a53 \
 		   -std=gnu89
 
 KBUILD_AFLAGS_KERNEL :=
